@@ -2,7 +2,6 @@ from setuptools import setup
 
 
 install_requires = [
-	"json",
 	"tqdm",
 	"termcolor",
 	"pandas"
