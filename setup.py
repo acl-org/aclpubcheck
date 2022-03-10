@@ -9,7 +9,7 @@ install_requires = [
 
 
 setup(
-	name="aclpublic",
+	name="aclpubcheck",
 	install_requires=install_requires,
 	version="0.1",
 	scripts=[]
