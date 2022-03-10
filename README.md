@@ -5,6 +5,7 @@ You can install the package by cloning the repo
 1. ``git clone git@github.com:acl-org/aclpubcheck.git``
 2. ``cd aclpubcheck``
 3. ``pip install -e .``
+
 Or directly
 1. ``pip3 install git+https://github.com/acl-org/aclpubcheck.git``
 
