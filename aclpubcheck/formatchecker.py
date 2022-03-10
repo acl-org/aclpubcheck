@@ -2,8 +2,6 @@
 python3 formatchecker.py [-h] [--paper_type {long,short,other}] file_or_dir [file_or_dir ...]
 '''
 
-# TODO: make the script pip installable
-
 import argparse
 import json
 from enum import Enum
