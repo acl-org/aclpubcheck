@@ -4,7 +4,8 @@ from setuptools import setup
 install_requires = [
 	"tqdm",
 	"termcolor",
-	"pandas"
+	"pandas",
+	"pdfplumber"
 ]
 
 
