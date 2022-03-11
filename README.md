@@ -11,3 +11,5 @@ Or directly
 
 You can run the script on a paper as follows
 ``python3 aclpubcheck/formatchecker.py --paper_type PAPER_TYPE PAPER_NAME.pdf``
+
+**Notice**: Additional info can be found in the PDF document ``aclpubcheck_additional_info.pdf`` included in this package.
