@@ -52,7 +52,7 @@ class Formatter(object):
     def format_check(self, submission, paper_type):
         print(f"Checking {submission}")
 
-        # TOOD: make this less of a hackg
+        # TOOD: make this less of a hack
         self.number = submission.split("/")[-1].split("_")[0].replace(".pdf", "")
         self.pdf = pdfplumber.open(submission)
         self.logs = defaultdict(list)  # reset log before calling the format-checking functions
@@ -65,7 +65,7 @@ class Formatter(object):
         self.check_font()
         self.check_references()
 
-        # TOOD: put json dump back on
+        # TODO: put json dump back on
         output_file = "errors-{0}.json".format(self.number)
         # string conversion for json dump
         logs_json = {}
@@ -109,7 +109,7 @@ class Formatter(object):
 
             
     def check_page_size(self):
-        '''Checks the paper size (A4) of each pages in the submission.'''
+        """ Checks the paper size (A4) of each pages in the submission. """
 
         pages = []
         for i, page in enumerate(self.pdf.pages):
@@ -123,7 +123,7 @@ class Formatter(object):
 
         
     def check_page_margin(self):
-        '''Checks if any text or figure is in the margin of pages.'''
+        """ Checks if any text or figure is in the margin of pages. """
 
         pages_image = defaultdict(list)
         pages_text = defaultdict(list)
@@ -200,7 +200,7 @@ class Formatter(object):
 
                 
     def check_page_num(self, paper_type):
-        '''Check if the paper exceeds the page limit.'''
+        """Check if the paper exceeds the page limit."""
 
         # TODO: Enable uploading a paper_type file to include all papers' types.
 
@@ -237,7 +237,7 @@ class Formatter(object):
 
             
     def check_font(self):
-        '''Check the font'''
+        """ Checks the fonts. """
 
         correct_fontname = "NimbusRomNo9L-Regu"
         fonts = defaultdict(int)
@@ -258,7 +258,7 @@ class Formatter(object):
 
             
     def check_references(self):
-        '''Check that citations have URLs, and that they have venues (not just arXiv ids)'''
+        """ Check that citations have URLs, and that they have venues (not just arXiv ids). """
 
         found_references = False
         arxiv_word_count = 0
