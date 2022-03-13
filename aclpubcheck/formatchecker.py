@@ -239,7 +239,8 @@ class Formatter(object):
     def check_font(self):
         """ Checks the fonts. """
 
-        correct_fontname = "NimbusRomNo9L-Regu"
+        correct_fontnames = set(["NimbusRomNo9L-Regu"])
+
         fonts = defaultdict(int)
         for i, page in enumerate(self.pdf.pages):
             try:
@@ -247,14 +248,16 @@ class Formatter(object):
                     fonts[char['fontname']] += 1
             except:
                 self.logs[Error.FONT] += [f"Can't parse page #{i+1}"]
+
         max_font_count, max_font_name = max((count, name) for name, count in fonts.items())  # find most used font
         sum_char_count = sum(fonts.values())
+
         # TODO: make this a command line argument
         if max_font_count / sum_char_count < 0.35:  # the most used font should be used more than 35% of the time
             self.logs[Error.FONT] += ["Can't find the main font"]
 
-        if not max_font_name.endswith(correct_fontname):  # the most used font should be `correct_fontname`
-            self.logs[Error.FONT] += [f"Wrong font. The main font used is {max_font_name} when it should be {correct_fontname}."]
+        if not any([max_font_name.endswith(correct_fontname) for correct_fontname in correct_fontnames]):  # the most used font should be `correct_fontname`
+            self.logs[Error.FONT] += [f"Wrong font. The main font used is {max_font_name} when it should a font in {correct_fontnames}."]
 
             
     def check_references(self):
