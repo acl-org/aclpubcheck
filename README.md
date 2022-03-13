@@ -10,6 +10,6 @@ Or directly
 1. ``pip3 install git+https://github.com/acl-org/aclpubcheck.git``
 
 You can run the script on a paper as follows
-``python3 aclpubcheck/formatchecker.py --paper_type PAPER_TYPE PAPER_NAME.pdf``
+``python3 aclpubcheck/formatchecker.py --paper_type PAPER_TYPE PAPER_NAME.pdf`` where ``PAPER_TYPE'' is taken from the set {long,short,other}. You should choose either long or short depending on the type of paper you have accepted.
 
 **Notice**: Additional info can be found in the PDF document ``aclpubcheck_additional_info.pdf`` included in this package.
