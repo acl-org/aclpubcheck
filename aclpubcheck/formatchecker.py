@@ -239,7 +239,10 @@ class Formatter(object):
     def check_font(self):
         """ Checks the fonts. """
 
-        correct_fontnames = set(["NimbusRomNo9L-Regu"])
+        correct_fontnames = set(["NimbusRomNo9L-Regu",
+                                 "TeXGyreTermesX-Regular",
+                                 "TimesNewRomanPSMT",
+                                 ])
 
         fonts = defaultdict(int)
         for i, page in enumerate(self.pdf.pages):
