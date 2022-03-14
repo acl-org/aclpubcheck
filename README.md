@@ -11,4 +11,4 @@ You can run the script on a paper as follows
 
 **Note**: Additional info can be found in the PDF document ``aclpubcheck_additional_info.pdf`` included in this package.
 
-**Pointe**: If you are having trouble with installing and using the toolkit directly, you can use a CodaLab version online https://colab.research.google.com/drive/1Sq6ilmrFUQpUFMkV71U8-Wf0madW-Uer?usp=sharing. 
+**Online Version**: If you are having trouble with installing and using the Python toolkit directly, you can use a CodaLab version online https://colab.research.google.com/drive/1Sq6ilmrFUQpUFMkV71U8-Wf0madW-Uer?usp=sharing. 
