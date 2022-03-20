@@ -21,7 +21,7 @@ class Error(Enum):
     FONT = "Font"
     PAGELIMIT = "Page Limit"
 
-    
+
 class Warn(Enum):
     BIB = "Bibliography"
 
@@ -39,17 +39,20 @@ class Margin(Enum):
     RIGHT = "right"
     LEFT = "left"
 
-    
+
 class Formatter(object):
-    
+
     def __init__(self):
         # TODO: these should be constants
         self.right_offset = 4.5
         self.left_offset = 2
         self.top_offset = 1
-        
+
 
     def format_check(self, submission, paper_type):
+        """
+        Return True if the paper is correct, False otherwise.
+        """
         print(f"Checking {submission}")
 
         # TOOD: make this less of a hack
@@ -87,7 +90,7 @@ class Formatter(object):
                     else:
                         print(colored("Warning ({0}):".format(e.value), "yellow")+" "+m)
                         warnings += 1
-                        
+
 
             # English nominal morphology
             error_text = "errors"
@@ -102,12 +105,16 @@ class Formatter(object):
             print("We detected {0} {1} and {2} {3} in your paper.".format(*(errors, error_text, warnings, warning_text)))
             print("In general, it is required that you fix errors for your paper to be published. Fixing warnings is optional, but recommended.")
             print("Important: Some of the margin errors may be spurious. The library detects the location of images, but not whether they have a white background that blends in.")
-        
+
+            if errors >= 1:
+                return False
 
         else:
             print(colored("All Clear!", "green"))
+            return True
 
-            
+
+
     def check_page_size(self):
         """ Checks the paper size (A4) of each pages in the submission. """
 
@@ -121,7 +128,7 @@ class Formatter(object):
             self.logs[Error.SIZE] += [error]
         self.page_errors.update(pages)
 
-        
+
     def check_page_margin(self):
         """ Checks if any text or figure is in the margin of pages. """
 
@@ -155,7 +162,7 @@ class Formatter(object):
                         violation = Margin.LEFT
                     elif Page.WIDTH.value-float(word["x1"]) < (71-self.right_offset):
                         violation = Margin.RIGHT
-                        
+
                     if violation:
                         pages_text[i] += [(word, violation)]
             except:
@@ -194,11 +201,11 @@ class Formatter(object):
                     self.logs[Error.MARGIN] += ["An image on page {} bleeds into the margin.".format(page+1)]
                     bbox = (image["x0"], image["top"], image["x1"], image["bottom"])
                     im.draw_rect(bbox, fill=None, stroke="red", stroke_width=5)
-                    
+
                 im.save("errors-{0}-page-{1}.png".format(*(self.number, page+1)), format="PNG")
                 #+ "Specific text: "+str([v for k, v in pages_text.values()])]
 
-                
+
     def check_page_num(self, paper_type):
         """Check if the paper exceeds the page limit."""
 
@@ -214,7 +221,7 @@ class Formatter(object):
         marker = None
         if len(self.pdf.pages) <= page_threshold:
             return
-        
+
         for i, page in enumerate(self.pdf.pages):
             if i+1 in self.page_errors:
                 continue
@@ -235,7 +242,7 @@ class Formatter(object):
                                       f"Acknowledgments, Ethics Statement) was found on "
                                       f"page {page}, line {line}."]
 
-            
+
     def check_font(self):
         """ Checks the fonts. """
 
@@ -262,7 +269,7 @@ class Formatter(object):
         if not any([max_font_name.endswith(correct_fontname) for correct_fontname in correct_fontnames]):  # the most used font should be `correct_fontname`
             self.logs[Error.FONT] += [f"Wrong font. The main font used is {max_font_name} when it should a font in {correct_fontnames}."]
 
-            
+
     def check_references(self):
         """ Check that citations have URLs, and that they have venues (not just arXiv ids). """
 
@@ -314,9 +321,9 @@ class Formatter(object):
 
 
 args = None
-def worker(pdf_path):
+def worker(pdf_path, paper_type):
     """ process one pdf """
-    Formatter().format_check(submission=pdf_path, paper_type=args.paper_type)
+    return Formatter().format_check(submission=pdf_path, paper_type=paper_type)
 
 
 def main():
@@ -327,7 +334,7 @@ def main():
     parser.add_argument('--paper_type', choices={"short", "long", "other"},
                         default='long')
     parser.add_argument('--num_workers', type=int, default=1)
-    
+
     args = parser.parse_args()
 
     # retrieve file paths
@@ -351,7 +358,7 @@ def main():
         # TODO: make the tqdm togglable
         #for submission in tqdm(fileset):
         for submission in fileset:
-            worker(submission)
+            worker(submission, args.paper_type)
 
 if __name__ == "__main__":
     main()
