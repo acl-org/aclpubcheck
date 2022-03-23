@@ -37,7 +37,7 @@ def main():
     with open(args.output_file, 'wt') as out_file:
         tsv_writer = csv.writer(out_file, delimiter='\t')
 
-        tsv_writer.writerow(['id', 'file', 'title', 'authors', 'emails'])
+        tsv_writer.writerow(['correct', 'id', 'file', 'title', 'authors', 'emails'])
 
         with open(args.papers_yaml_path) as file:
             papers = yaml.load(file, Loader=yaml.FullLoader)
@@ -68,9 +68,9 @@ def main():
                     names.append(author["name"])
                     emails.append(author["emails"])
 
-                if is_correct == False:
-                    tsv_writer.writerow([id, file, title, ";".join(names), ";".join(emails)])
-                    out_file.flush()
+
+                tsv_writer.writerow([is_correct, id, file, title, ";".join(names), ";".join(emails)])
+                out_file.flush()
 
 
 if __name__ == "__main__":

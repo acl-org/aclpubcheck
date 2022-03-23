@@ -112,6 +112,9 @@ class Formatter(object):
 
             if errors >= 1:
                 return False
+            else:
+                return True
+
 
         else:
             if print_only_errors == False:
