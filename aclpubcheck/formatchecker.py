@@ -11,6 +11,7 @@ from os.path import isfile, join
 import pdfplumber
 from tqdm import tqdm
 from termcolor import colored
+import os
 
 
 class Error(Enum):
@@ -49,7 +50,7 @@ class Formatter(object):
         self.top_offset = 1
 
 
-    def format_check(self, submission, paper_type):
+    def format_check(self, submission, paper_type, output_dir = ".", print_only_errors = False):
         """
         Return True if the paper is correct, False otherwise.
         """
@@ -63,7 +64,7 @@ class Formatter(object):
 
         # TODO: A few papers take hours to check. Consider using a timeout
         self.check_page_size()
-        self.check_page_margin()
+        self.check_page_margin(output_dir)
         self.check_page_num(paper_type)
         self.check_font()
         self.check_references()
@@ -74,7 +75,7 @@ class Formatter(object):
         logs_json = {}
         for k, v in self.logs.items():
             logs_json[str(k)] = v
-        json.dump(logs_json, open(output_file, 'w'))  # always write a log file even if it is empty
+
         if self.logs:
             print(f"Errors. Check {output_file} for details.")
 
@@ -100,6 +101,9 @@ class Formatter(object):
             if warnings == 1:
                 warning_text = "warning"
 
+            if print_only_errors == False or errors >= 1:
+                json.dump(logs_json, open(os.path.join(output_dir,output_file), 'w'))  # always write a log file even if it is empty
+
             # display to user
             print()
             print("We detected {0} {1} and {2} {3} in your paper.".format(*(errors, error_text, warnings, warning_text)))
@@ -110,6 +114,9 @@ class Formatter(object):
                 return False
 
         else:
+            if print_only_errors == False:
+                json.dump(logs_json, open(os.path.join(output_dir,output_file), 'w'))
+
             print(colored("All Clear!", "green"))
             return True
 
@@ -129,7 +136,7 @@ class Formatter(object):
         self.page_errors.update(pages)
 
 
-    def check_page_margin(self):
+    def check_page_margin(self, output_dir):
         """ Checks if any text or figure is in the margin of pages. """
 
         pages_image = defaultdict(list)
@@ -202,7 +209,8 @@ class Formatter(object):
                     bbox = (image["x0"], image["top"], image["x1"], image["bottom"])
                     im.draw_rect(bbox, fill=None, stroke="red", stroke_width=5)
 
-                im.save("errors-{0}-page-{1}.png".format(*(self.number, page+1)), format="PNG")
+                png_file_name = "errors-{0}-page-{1}.png".format(*(self.number, page+1))
+                im.save(os.path.join(output_dir, png_file_name), format="PNG")
                 #+ "Specific text: "+str([v for k, v in pages_text.values()])]
 
 
