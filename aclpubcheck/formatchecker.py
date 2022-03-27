@@ -120,9 +120,9 @@ class Formatter(object):
             print("Important: Some of the margin errors may be spurious. The library detects the location of images, but not whether they have a white background that blends in.")
 
             if errors >= 1:
-                return False
+                return logs_json
             else:
-                return True
+                return {}
 
 
         else:
@@ -130,7 +130,7 @@ class Formatter(object):
                 json.dump(logs_json, open(os.path.join(output_dir,output_file), 'w'))
 
             print(colored("All Clear!", "green"))
-            return True
+            return logs_json
 
 
 
@@ -174,7 +174,7 @@ class Formatter(object):
 
                         # get the actual visible area
                         x0 = max(0, int(image["x0"]))
-                        # check the intersection with the rigth margin to handle larger images
+                        # check the intersection with the right margin to handle larger images
                         # but with an "overflow" that is of the same color of the backgrond
                         if violation == Margin.RIGHT:
                             x0 = max(x0, Page.WIDTH.value - 71 + self.right_offset)
@@ -219,7 +219,7 @@ class Formatter(object):
                         # if the area image is completely white, it can be skipped
                         # get the actual visible area
                         x0 = max(0, int(word["x0"]))
-                        # check the intersection with the rigth margin to handle larger images
+                        # check the intersection with the right margin to handle larger images
                         # but with an "overflow" that is of the same color of the backgrond
                         if violation == Margin.RIGHT:
                             x0 = max(x0, Page.WIDTH.value - 71 + self.right_offset)

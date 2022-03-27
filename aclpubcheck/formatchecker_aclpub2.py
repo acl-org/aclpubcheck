@@ -28,16 +28,16 @@ def main():
     formatter = Formatter()
 
     # Relaxing the margin on ONE point
-    formatter.right_offset = 5.5 #4.5
-    formatter.left_offset = 3 #2
-    formatter.top_offset = 2 #1
+    formatter.right_offset = 5 #4.5
+    formatter.left_offset = 5 #2
+    formatter.top_offset = 5 #1
 
     print_only_errors = True
 
     with open(args.output_file, 'wt') as out_file:
         tsv_writer = csv.writer(out_file, delimiter='\t')
 
-        tsv_writer.writerow(['correct', 'id', 'file', 'title', 'authors', 'emails'])
+        tsv_writer.writerow(['correct', 'id', 'file', 'title', 'authors', 'emails', 'logs'])
 
         with open(args.papers_yaml_path) as file:
             papers = yaml.load(file, Loader=yaml.FullLoader)
@@ -62,14 +62,20 @@ def main():
                 names = []
                 emails = []
 
-                is_correct = formatter.format_check(os.path.join(args.papers_dir, input_file_name), paper_type, output_dir = args.output_dir, print_only_errors = print_only_errors)
+                logs_json = formatter.format_check(os.path.join(args.papers_dir, input_file_name), paper_type, output_dir = args.output_dir, print_only_errors = print_only_errors)
+
+                # it is empty
+                if not logs_json:
+                    is_correct = True
+                else:
+                    is_correct = False
 
                 for author in authors:
                     names.append(author["name"])
                     emails.append(author["emails"])
 
 
-                tsv_writer.writerow([is_correct, id, file, title, ";".join(names), ";".join(emails)])
+                tsv_writer.writerow([is_correct, id, file, title, ";".join(names), ";".join(emails), str(logs_json)])
                 out_file.flush()
 
 
