@@ -190,6 +190,11 @@ class Formatter(object):
                             y1 = min(y1, 57-self.top_offset)
 
                         bbox = (x0, y0, x1, y1)
+
+                        # avoid problems in cropping images too small
+                        if x1 - x0 <= 1 or y1 - y0 <= 1:
+                            continue
+                            
                         # cropping the image to check if it is white
                         # i.e., all pixels set to 255
                         cropped_page = p.crop(bbox)
