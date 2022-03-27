@@ -174,9 +174,20 @@ class Formatter(object):
 
                         # get the actual visible area
                         x0 = max(0, int(image["x0"]))
+                        # check the intersection with the rigth margin to handle larger images
+                        # but with an "overflow" that is of the same color of the backgrond
+                        if violation == Margin.RIGHT:
+                            x0 = max(x0, Page.WIDTH.value - 71 + self.right_offset)
+
                         x1 = min(int(image["x1"]), Page.WIDTH.value)
+                        if violation == Margin.LEFT:
+                            x1 = min(x1, 71 - self.right_offset)
+
                         y0 = max(0, int(image["top"]))
+
                         y1 = min(int(image["bottom"]), Page.HEIGHT.value)
+                        if violation == Margin.TOP:
+                            y1 = min(y1, 57-self.top_offset)
 
                         bbox = (x0, y0, x1, y1)
                         # cropping the image to check if it is white
@@ -208,11 +219,27 @@ class Formatter(object):
                         # if the area image is completely white, it can be skipped
                         # get the actual visible area
                         x0 = max(0, int(word["x0"]))
+                        # check the intersection with the rigth margin to handle larger images
+                        # but with an "overflow" that is of the same color of the backgrond
+                        if violation == Margin.RIGHT:
+                            x0 = max(x0, Page.WIDTH.value - 71 + self.right_offset)
+
                         x1 = min(int(word["x1"]), Page.WIDTH.value)
+                        if violation == Margin.LEFT:
+                            x1 = min(x1, 71 - self.right_offset)
+
                         y0 = max(0, int(word["top"]))
+
                         y1 = min(int(word["bottom"]), Page.HEIGHT.value)
+                        if violation == Margin.TOP:
+                            y1 = min(y1, 57-self.top_offset)
 
                         bbox = (x0, y0, x1, y1)
+
+                        # avoid problems in cropping images too small
+                        if x1 - x0 <= 1 or y1 - y0 <= 1:
+                            continue
+
                         # cropping the image to check if it is white
                         # i.e., all pixels set to 255
                         cropped_page = p.crop(bbox)
@@ -271,8 +298,8 @@ class Formatter(object):
         # thresholds for different types of papers
         standards = {"short": 5, "long": 9, "other": float("inf")}
         page_threshold = standards[paper_type.lower()]
-        candidates = {"References", "Acknowledgments", "Acknowledgement", "EthicsStatement", "EthicalConsiderations", "BroaderImpact"}
-        acks = {"Acknowledgment", "Acknowledgement"}
+        candidates = {"References", "Acknowledgments", "Acknowledgement", "Acknowledgment", "EthicsStatement", "EthicalConsiderations", "Ethicalconsiderations", "BroaderImpact", "EthicalConcerns"}
+        #acks = {"Acknowledgment", "Acknowledgement"}
 
         # Find (references, acknowledgements, ethics).
         marker = None
@@ -286,8 +313,8 @@ class Formatter(object):
             for j, line in enumerate(text):
                 if marker is None and any(x in line for x in candidates):
                     marker = (i+1, j+1)
-                if "Acknowl" in line and all(x not in line for x in acks):
-                    self.logs[Error.SPELLING] = ["'Acknowledgments' was misspelled."]
+                #if "Acknowl" in line and all(x not in line for x in acks):
+                #    self.logs[Error.SPELLING] = ["'Acknowledgments' was misspelled."]
 
         # if the first marker appears after the first line of page 10,
         # there is high probability the paper exceeds the page limit.
