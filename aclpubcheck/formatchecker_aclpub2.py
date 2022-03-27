@@ -53,7 +53,7 @@ def main():
                 paper_type = input_paper_type
 
                 if input_paper_type == "auto":
-                    yaml_paper_type = paper["metadata"]["paper_type"]
+                    yaml_paper_type = paper["attributes"]["paper_type"]
                     if "long" in yaml_paper_type:
                         paper_type = "long"
                     if "short" in yaml_paper_type:
