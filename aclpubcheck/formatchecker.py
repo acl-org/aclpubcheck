@@ -12,6 +12,9 @@ import pdfplumber
 from tqdm import tqdm
 from termcolor import colored
 import os
+import numpy as np
+import traceback
+
 
 
 class Error(Enum):
@@ -48,6 +51,12 @@ class Formatter(object):
         self.right_offset = 4.5
         self.left_offset = 2
         self.top_offset = 1
+
+        # this is used to check if an area out of the margin is a "false positive",
+        # i.e., an area containing invisible symbols. When a candidate area out of
+        # the margin is proposed, this is cropped and if all pixels are equal to
+        # the background, this is skipped
+        self.background_color = 255
 
 
     def format_check(self, submission, paper_type, output_dir = ".", print_only_errors = False):
@@ -153,29 +162,66 @@ class Formatter(object):
                 # 57 pixels (72ppi) = 2cm; 71 pixels (72ppi) = 2.5cm.
                 for image in p.images:
                     violation = None
-                    if float(image["top"]) < (57-self.top_offset):
+                    if int(image["bottom"]) > 0 and float(image["top"]) < (57-self.top_offset):
                         violation = Margin.TOP
-                    elif float(image["x0"]) < (71-self.left_offset):
+                    elif int(image["x1"]) > 0 and float(image["x0"]) < (71-self.left_offset):
                         violation = Margin.LEFT
-                    elif Page.WIDTH.value-float(image["x1"]) < (71-self.right_offset):
+                    elif int(image["x0"]) < Page.WIDTH.value and Page.WIDTH.value-float(image["x1"]) < (71-self.right_offset):
                         violation = Margin.RIGHT
 
                     if violation:
-                        pages_image[i] += [(image, violation)]
+                        # if the image is completely white, it can be skipped
+
+                        # get the actual visible area
+                        x0 = max(0, int(image["x0"]))
+                        x1 = min(int(image["x1"]), Page.WIDTH.value)
+                        y0 = max(0, int(image["top"]))
+                        y1 = min(int(image["bottom"]), Page.HEIGHT.value)
+
+                        bbox = (x0, y0, x1, y1)
+                        # cropping the image to check if it is white
+                        # i.e., all pixels set to 255
+                        cropped_page = p.crop(bbox)
+                        image_obj = cropped_page.to_image(resolution=100)
+                        if np.mean(image_obj.original) != self.background_color:
+                            pages_image[i] += [(image, violation)]
 
                 # Parse texts
-                for j, word in enumerate(p.extract_words()):
+                for j, word in enumerate(p.extract_words(extra_attrs=["non_stroking_color", "stroking_color"])):
                     violation = None
-                    if float(word["top"]) < (57-self.top_offset):
+
+                    #if word["non_stroking_color"] == (0, 0, 0) or word["non_stroking_color"] == 0 or word["stroking_color"] == 0:
+                    if word["non_stroking_color"] == (0, 0, 0) or word["non_stroking_color"] == [0]:
+                        continue
+
+                    if word["non_stroking_color"] is None and word["stroking_color"] is None:
+                        continue
+
+                    if int(word["bottom"]) > 0 and float(word["top"]) < (57-self.top_offset):
                         violation = Margin.TOP
-                    elif float(word["x0"]) < (71-self.left_offset):
+                    elif int(word["x1"]) > 0 and float(word["x0"]) < (71-self.left_offset):
                         violation = Margin.LEFT
-                    elif Page.WIDTH.value-float(word["x1"]) < (71-self.right_offset):
+                    elif int(word["x0"]) < Page.WIDTH.value and Page.WIDTH.value-float(word["x1"]) < (71-self.right_offset):
                         violation = Margin.RIGHT
 
-                    if violation:
-                        pages_text[i] += [(word, violation)]
+                    if violation and int(word["x0"]) < Page.WIDTH.value and int(word["x1"]) >= 0 and int(word["bottom"]) >= 0:
+                        # if the area image is completely white, it can be skipped
+                        # get the actual visible area
+                        x0 = max(0, int(word["x0"]))
+                        x1 = min(int(word["x1"]), Page.WIDTH.value)
+                        y0 = max(0, int(word["top"]))
+                        y1 = min(int(word["bottom"]), Page.HEIGHT.value)
+
+                        bbox = (x0, y0, x1, y1)
+                        # cropping the image to check if it is white
+                        # i.e., all pixels set to 255
+                        cropped_page = p.crop(bbox)
+                        image_obj = cropped_page.to_image(resolution=50)
+                        if np.mean(image_obj.original) != self.background_color:
+                            print("Found text violation:\t" + str(violation) + "\t" + str(word))
+                            pages_text[i] += [(word, violation)]
             except:
+                traceback.print_exc()
                 perror.append(i+1)
 
         if perror:
