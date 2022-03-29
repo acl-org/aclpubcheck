@@ -11,6 +11,10 @@ from os.path import isfile, join
 import pdfplumber
 from tqdm import tqdm
 from termcolor import colored
+import os
+import numpy as np
+import traceback
+
 
 
 class Error(Enum):
@@ -21,7 +25,7 @@ class Error(Enum):
     FONT = "Font"
     PAGELIMIT = "Page Limit"
 
-    
+
 class Warn(Enum):
     BIB = "Bibliography"
 
@@ -39,17 +43,26 @@ class Margin(Enum):
     RIGHT = "right"
     LEFT = "left"
 
-    
+
 class Formatter(object):
-    
+
     def __init__(self):
         # TODO: these should be constants
         self.right_offset = 4.5
         self.left_offset = 2
         self.top_offset = 1
-        
 
-    def format_check(self, submission, paper_type):
+        # this is used to check if an area out of the margin is a "false positive",
+        # i.e., an area containing invisible symbols. When a candidate area out of
+        # the margin is proposed, this is cropped and if all pixels are equal to
+        # the background, this is skipped
+        self.background_color = 255
+
+
+    def format_check(self, submission, paper_type, output_dir = ".", print_only_errors = False):
+        """
+        Return True if the paper is correct, False otherwise.
+        """
         print(f"Checking {submission}")
 
         # TOOD: make this less of a hack
@@ -60,7 +73,7 @@ class Formatter(object):
 
         # TODO: A few papers take hours to check. Consider using a timeout
         self.check_page_size()
-        self.check_page_margin()
+        self.check_page_margin(output_dir)
         self.check_page_num(paper_type)
         self.check_font()
         self.check_references()
@@ -71,7 +84,7 @@ class Formatter(object):
         logs_json = {}
         for k, v in self.logs.items():
             logs_json[str(k)] = v
-        json.dump(logs_json, open(output_file, 'w'))  # always write a log file even if it is empty
+
         if self.logs:
             print(f"Errors. Check {output_file} for details.")
 
@@ -87,7 +100,7 @@ class Formatter(object):
                     else:
                         print(colored("Warning ({0}):".format(e.value), "yellow")+" "+m)
                         warnings += 1
-                        
+
 
             # English nominal morphology
             error_text = "errors"
@@ -97,17 +110,30 @@ class Formatter(object):
             if warnings == 1:
                 warning_text = "warning"
 
+            if print_only_errors == False or errors >= 1:
+                json.dump(logs_json, open(os.path.join(output_dir,output_file), 'w'))  # always write a log file even if it is empty
+
             # display to user
             print()
             print("We detected {0} {1} and {2} {3} in your paper.".format(*(errors, error_text, warnings, warning_text)))
             print("In general, it is required that you fix errors for your paper to be published. Fixing warnings is optional, but recommended.")
             print("Important: Some of the margin errors may be spurious. The library detects the location of images, but not whether they have a white background that blends in.")
-        
+
+            if errors >= 1:
+                return logs_json
+            else:
+                return {}
+
 
         else:
-            print(colored("All Clear!", "green"))
+            if print_only_errors == False:
+                json.dump(logs_json, open(os.path.join(output_dir,output_file), 'w'))
 
-            
+            print(colored("All Clear!", "green"))
+            return logs_json
+
+
+
     def check_page_size(self):
         """ Checks the paper size (A4) of each pages in the submission. """
 
@@ -121,8 +147,8 @@ class Formatter(object):
             self.logs[Error.SIZE] += [error]
         self.page_errors.update(pages)
 
-        
-    def check_page_margin(self):
+
+    def check_page_margin(self, output_dir):
         """ Checks if any text or figure is in the margin of pages. """
 
         pages_image = defaultdict(list)
@@ -136,29 +162,98 @@ class Formatter(object):
                 # 57 pixels (72ppi) = 2cm; 71 pixels (72ppi) = 2.5cm.
                 for image in p.images:
                     violation = None
-                    if float(image["top"]) < (57-self.top_offset):
+                    if int(image["bottom"]) > 0 and float(image["top"]) < (57-self.top_offset):
                         violation = Margin.TOP
-                    elif float(image["x0"]) < (71-self.left_offset):
+                    elif int(image["x1"]) > 0 and float(image["x0"]) < (71-self.left_offset):
                         violation = Margin.LEFT
-                    elif Page.WIDTH.value-float(image["x1"]) < (71-self.right_offset):
+                    elif int(image["x0"]) < Page.WIDTH.value and Page.WIDTH.value-float(image["x1"]) < (71-self.right_offset):
                         violation = Margin.RIGHT
 
                     if violation:
-                        pages_image[i] += [(image, violation)]
+                        # if the image is completely white, it can be skipped
+
+                        # get the actual visible area
+                        x0 = max(0, int(image["x0"]))
+                        # check the intersection with the right margin to handle larger images
+                        # but with an "overflow" that is of the same color of the backgrond
+                        if violation == Margin.RIGHT:
+                            x0 = max(x0, Page.WIDTH.value - 71 + self.right_offset)
+
+                        x1 = min(int(image["x1"]), Page.WIDTH.value)
+                        if violation == Margin.LEFT:
+                            x1 = min(x1, 71 - self.right_offset)
+
+                        y0 = max(0, int(image["top"]))
+
+                        y1 = min(int(image["bottom"]), Page.HEIGHT.value)
+                        if violation == Margin.TOP:
+                            y1 = min(y1, 57-self.top_offset)
+
+                        bbox = (x0, y0, x1, y1)
+
+                        # avoid problems in cropping images too small
+                        if x1 - x0 <= 1 or y1 - y0 <= 1:
+                            continue
+                            
+                        # cropping the image to check if it is white
+                        # i.e., all pixels set to 255
+                        cropped_page = p.crop(bbox)
+                        image_obj = cropped_page.to_image(resolution=100)
+                        if np.mean(image_obj.original) != self.background_color:
+                            pages_image[i] += [(image, violation)]
 
                 # Parse texts
-                for j, word in enumerate(p.extract_words()):
+                for j, word in enumerate(p.extract_words(extra_attrs=["non_stroking_color", "stroking_color"])):
                     violation = None
-                    if float(word["top"]) < (57-self.top_offset):
+
+                    #if word["non_stroking_color"] == (0, 0, 0) or word["non_stroking_color"] == 0 or word["stroking_color"] == 0:
+                    if word["non_stroking_color"] == (0, 0, 0) or word["non_stroking_color"] == [0]:
+                        continue
+
+                    if word["non_stroking_color"] is None and word["stroking_color"] is None:
+                        continue
+
+                    if int(word["bottom"]) > 0 and float(word["top"]) < (57-self.top_offset):
                         violation = Margin.TOP
-                    elif float(word["x0"]) < (71-self.left_offset):
+                    elif int(word["x1"]) > 0 and float(word["x0"]) < (71-self.left_offset):
                         violation = Margin.LEFT
-                    elif Page.WIDTH.value-float(word["x1"]) < (71-self.right_offset):
+                    elif int(word["x0"]) < Page.WIDTH.value and Page.WIDTH.value-float(word["x1"]) < (71-self.right_offset):
                         violation = Margin.RIGHT
-                        
-                    if violation:
-                        pages_text[i] += [(word, violation)]
+
+                    if violation and int(word["x0"]) < Page.WIDTH.value and int(word["x1"]) >= 0 and int(word["bottom"]) >= 0:
+                        # if the area image is completely white, it can be skipped
+                        # get the actual visible area
+                        x0 = max(0, int(word["x0"]))
+                        # check the intersection with the right margin to handle larger images
+                        # but with an "overflow" that is of the same color of the backgrond
+                        if violation == Margin.RIGHT:
+                            x0 = max(x0, Page.WIDTH.value - 71 + self.right_offset)
+
+                        x1 = min(int(word["x1"]), Page.WIDTH.value)
+                        if violation == Margin.LEFT:
+                            x1 = min(x1, 71 - self.right_offset)
+
+                        y0 = max(0, int(word["top"]))
+
+                        y1 = min(int(word["bottom"]), Page.HEIGHT.value)
+                        if violation == Margin.TOP:
+                            y1 = min(y1, 57-self.top_offset)
+
+                        bbox = (x0, y0, x1, y1)
+
+                        # avoid problems in cropping images too small
+                        if x1 - x0 <= 1 or y1 - y0 <= 1:
+                            continue
+
+                        # cropping the image to check if it is white
+                        # i.e., all pixels set to 255
+                        cropped_page = p.crop(bbox)
+                        image_obj = cropped_page.to_image(resolution=50)
+                        if np.mean(image_obj.original) != self.background_color:
+                            print("Found text violation:\t" + str(violation) + "\t" + str(word))
+                            pages_text[i] += [(word, violation)]
             except:
+                traceback.print_exc()
                 perror.append(i+1)
 
         if perror:
@@ -194,11 +289,12 @@ class Formatter(object):
                     self.logs[Error.MARGIN] += ["An image on page {} bleeds into the margin.".format(page+1)]
                     bbox = (image["x0"], image["top"], image["x1"], image["bottom"])
                     im.draw_rect(bbox, fill=None, stroke="red", stroke_width=5)
-                    
-                im.save("errors-{0}-page-{1}.png".format(*(self.number, page+1)), format="PNG")
+
+                png_file_name = "errors-{0}-page-{1}.png".format(*(self.number, page+1))
+                im.save(os.path.join(output_dir, png_file_name), format="PNG")
                 #+ "Specific text: "+str([v for k, v in pages_text.values()])]
 
-                
+
     def check_page_num(self, paper_type):
         """Check if the paper exceeds the page limit."""
 
@@ -207,14 +303,14 @@ class Formatter(object):
         # thresholds for different types of papers
         standards = {"short": 5, "long": 9, "other": float("inf")}
         page_threshold = standards[paper_type.lower()]
-        candidates = {"References", "Acknowledgments", "Acknowledgement", "EthicsStatement", "EthicalConsiderations", "BroaderImpact"}
-        acks = {"Acknowledgment", "Acknowledgement"}
+        candidates = {"References", "Acknowledgments", "Acknowledgement", "Acknowledgment", "EthicsStatement", "EthicalConsiderations", "Ethicalconsiderations", "BroaderImpact", "EthicalConcerns"}
+        #acks = {"Acknowledgment", "Acknowledgement"}
 
         # Find (references, acknowledgements, ethics).
         marker = None
         if len(self.pdf.pages) <= page_threshold:
             return
-        
+
         for i, page in enumerate(self.pdf.pages):
             if i+1 in self.page_errors:
                 continue
@@ -222,8 +318,8 @@ class Formatter(object):
             for j, line in enumerate(text):
                 if marker is None and any(x in line for x in candidates):
                     marker = (i+1, j+1)
-                if "Acknowl" in line and all(x not in line for x in acks):
-                    self.logs[Error.SPELLING] = ["'Acknowledgments' was misspelled."]
+                #if "Acknowl" in line and all(x not in line for x in acks):
+                #    self.logs[Error.SPELLING] = ["'Acknowledgments' was misspelled."]
 
         # if the first marker appears after the first line of page 10,
         # there is high probability the paper exceeds the page limit.
@@ -235,7 +331,7 @@ class Formatter(object):
                                       f"Acknowledgments, Ethics Statement) was found on "
                                       f"page {page}, line {line}."]
 
-            
+
     def check_font(self):
         """ Checks the fonts. """
 
@@ -262,7 +358,7 @@ class Formatter(object):
         if not any([max_font_name.endswith(correct_fontname) for correct_fontname in correct_fontnames]):  # the most used font should be `correct_fontname`
             self.logs[Error.FONT] += [f"Wrong font. The main font used is {max_font_name} when it should a font in {correct_fontnames}."]
 
-            
+
     def check_references(self):
         """ Check that citations have URLs, and that they have venues (not just arXiv ids). """
 
@@ -314,9 +410,9 @@ class Formatter(object):
 
 
 args = None
-def worker(pdf_path):
+def worker(pdf_path, paper_type):
     """ process one pdf """
-    Formatter().format_check(submission=pdf_path, paper_type=args.paper_type)
+    return Formatter().format_check(submission=pdf_path, paper_type=paper_type)
 
 
 def main():
@@ -327,7 +423,7 @@ def main():
     parser.add_argument('--paper_type', choices={"short", "long", "other"},
                         default='long')
     parser.add_argument('--num_workers', type=int, default=1)
-    
+
     args = parser.parse_args()
 
     # retrieve file paths
@@ -351,7 +447,7 @@ def main():
         # TODO: make the tqdm togglable
         #for submission in tqdm(fileset):
         for submission in fileset:
-            worker(submission)
+            worker(submission, args.paper_type)
 
 if __name__ == "__main__":
     main()
