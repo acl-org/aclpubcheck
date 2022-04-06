@@ -194,13 +194,17 @@ class Formatter(object):
                         # avoid problems in cropping images too small
                         if x1 - x0 <= 1 or y1 - y0 <= 1:
                             continue
-                            
+
                         # cropping the image to check if it is white
                         # i.e., all pixels set to 255
                         cropped_page = p.crop(bbox)
-                        image_obj = cropped_page.to_image(resolution=100)
-                        if np.mean(image_obj.original) != self.background_color:
+                        try:
+                          image_obj = cropped_page.to_image(resolution=100)
+                          if np.mean(image_obj.original) != self.background_color:
                             pages_image[i] += [(image, violation)]
+                        # if there are some errors during cropping, it is better to check
+                        except:
+                          pages_image[i] += [(image, violation)]
 
                 # Parse texts
                 for j, word in enumerate(p.extract_words(extra_attrs=["non_stroking_color", "stroking_color"])):
