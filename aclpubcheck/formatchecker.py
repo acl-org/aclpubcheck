@@ -251,11 +251,16 @@ class Formatter(object):
 
                         # cropping the image to check if it is white
                         # i.e., all pixels set to 255
-                        cropped_page = p.crop(bbox)
-                        image_obj = cropped_page.to_image(resolution=50)
-                        if np.mean(image_obj.original) != self.background_color:
-                            print("Found text violation:\t" + str(violation) + "\t" + str(word))
-                            pages_text[i] += [(word, violation)]
+                        try:
+                            cropped_page = p.crop(bbox)
+                            image_obj = cropped_page.to_image(resolution=100)
+                            if np.mean(image_obj.original) != self.background_color:
+                                print("Found text violation:\t" + str(violation) + "\t" + str(word))
+                                pages_text[i] += [(word, violation)]
+                        except:
+                          # if there are some errors during cropping, it is better to check
+                          pages_image[i] += [(word, violation)]
+
             except:
                 traceback.print_exc()
                 perror.append(i+1)
