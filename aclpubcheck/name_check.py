@@ -23,6 +23,9 @@ class PDFNameCheck:
         # See the link here: https://ref.scholarcy.com/api/
         # I used the POST curl for download
 
+        self.filename = config.file.split('.')[0]
+        os.makedirs('temp', exist_ok=True)
+
         curl_string = 'curl --silent -X \'POST\'' \
             ' \'https://ref.scholarcy.com/api/references/download\'' \
             ' -H \'accept: application/json\'' \
@@ -34,7 +37,7 @@ class PDFNameCheck:
             f' -F \'reference_style={config.mode}\'' \
             ' -F \'reference_format=bibtex\'' \
             ' -F \'parser=v2\'' \
-            ' -F \'engine=v1\' > before-rebiber.bib'
+            f' -F \'engine=v1\' > temp/before-rebiber-{self.filename}.bib'
 
         # Execute that curl string
         with open(os.devnull, "w") as f, contextlib.redirect_stdout(f):
@@ -43,17 +46,17 @@ class PDFNameCheck:
     def apply_rebiber(self):
         # The curl string generates a bib file called 'before rebiber'
         # Pass it to rebiber
-        all_bib_entries = rebiber.load_bib_file("before-rebiber.bib")
+        all_bib_entries = rebiber.load_bib_file(f'temp/before-rebiber-{self.filename}.bib')
 
         # Update the bib file using rebiber and call it 'after rebiber'
         with open(os.devnull, "w") as f, contextlib.redirect_stdout(f):
             rebiber.normalize_bib(
-                self.bib_db, all_bib_entries, "after-rebiber.bib")
+                self.bib_db, all_bib_entries, f'temp/after-rebiber-{self.filename}.bib')
 
     def extract_names(self):
         # Parse both bib files
-        old_bib_data = parse_file('before-rebiber.bib')
-        new_bib_data = parse_file('after-rebiber.bib')
+        old_bib_data = parse_file(f'temp/before-rebiber-{self.filename}.bib')
+        new_bib_data = parse_file(f'temp/after-rebiber-{self.filename}.bib')
 
         name_list = {}
 
