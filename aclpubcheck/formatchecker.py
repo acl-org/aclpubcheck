@@ -14,6 +14,8 @@ from termcolor import colored
 import os
 import numpy as np
 import traceback
+from name_check import PDFNameCheck
+from argparse import Namespace
 
 
 
@@ -57,6 +59,7 @@ class Formatter(object):
         # the margin is proposed, this is cropped and if all pixels are equal to
         # the background, this is skipped
         self.background_color = 255
+        self.pdf_namecheck = PDFNameCheck()
 
 
     def format_check(self, submission, paper_type, output_dir = ".", print_only_errors = False):
@@ -70,6 +73,7 @@ class Formatter(object):
         self.pdf = pdfplumber.open(submission)
         self.logs = defaultdict(list)  # reset log before calling the format-checking functions
         self.page_errors = set()
+        self.pdfpath = submission
 
         # TODO: A few papers take hours to check. Consider using a timeout
         self.check_page_size()
@@ -118,6 +122,8 @@ class Formatter(object):
             print("We detected {0} {1} and {2} {3} in your paper.".format(*(errors, error_text, warnings, warning_text)))
             print("In general, it is required that you fix errors for your paper to be published. Fixing warnings is optional, but recommended.")
             print("Important: Some of the margin errors may be spurious. The library detects the location of images, but not whether they have a white background that blends in.")
+            print("Important: Some of the warnings generated for citations may be spurious and inaccurate, due to parsing and indexing errors.")
+            print("We encourage you to double check the citations and update them depending on the latest source.")
 
             if errors >= 1:
                 return logs_json
@@ -367,6 +373,22 @@ class Formatter(object):
         if not any([max_font_name.endswith(correct_fontname) for correct_fontname in correct_fontnames]):  # the most used font should be `correct_fontname`
             self.logs[Error.FONT] += [f"Wrong font. The main font used is {max_font_name} when it should a font in {correct_fontnames}."]
 
+    def make_name_check_config(self):
+        """Configure the name checking parameters"""
+
+        config_dict = {
+            'file': self.pdfpath,
+            'show_names': False, # Show how the name is changed
+            'whole_name': False, # Consider the whole name changes
+            'first_name': True, # Consider only first name changes
+            'last_name': True, # Consider only last name changes
+            'ref_string': 'References', # How the bibilography starts
+            'mode': 'ensemble', # The mode for scholarcy, ensemble worked the best for ACL papers
+            'initials': True # Allow abbreviating first names to initials only.
+        }
+
+        return Namespace(**config_dict)
+
 
     def check_references(self):
         """ Check that citations have URLs, and that they have venues (not just arXiv ids). """
@@ -402,6 +424,12 @@ class Formatter(object):
 
         # The following checks fail in ~60% of the papers. TODO: relax them a bit
 
+        # Additional code for name checking starts here
+        config = self.make_name_check_config()
+        output_strings = self.pdf_namecheck.execute(config)
+        self.logs[Warn.BIB] += output_strings
+        # Additional code for name checking ends here
+
         if doi_url_count < 3:
             self.logs[Warn.BIB] += [f"Bibliography should use ACL Anthology DOIs whenever possible. Only {doi_url_count} references do."]
 
@@ -434,6 +462,7 @@ def main():
     parser.add_argument('--num_workers', type=int, default=1)
 
     args = parser.parse_args()
+    
 
     # retrieve file paths
     paths = {join(root, file_name)
