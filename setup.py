@@ -5,7 +5,11 @@ install_requires = [
 	"tqdm",
 	"termcolor",
 	"pandas",
-	"pdfplumber"
+	"pdfplumber",
+	"rebiber",
+	"pybtex",
+	"pylatexenc",
+	"Unidecode"
 ]
 
 

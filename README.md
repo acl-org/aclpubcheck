@@ -17,11 +17,19 @@ If you find that ACL pubcheck gives you a margin error due to a figure that runs
 
 ## Updating the names in citations
 
+### Description
+
 Our toolkit now automatically checks your citations and will leave a warning if you have used incorrect names or author list. Please have a look [here](https://2021.naacl.org/blog/name-change-procedure/) on why it is important to use updated citations.
 
 Some of the warnings generated for citations may be spurious and inaccurate, due to parsing and indexing errors. We encourage you to double check the citations and update them depending on the latest source. You can fix your bib files using the toolkit like [rebiber](https://github.com/yuchenlin/rebiber).
 
 Demo version of PDF name checking is available [here](https://pdf-name-change-checking.herokuapp.com/).
 
-**Credits**
+### How it's done
+
+The bibilography from your PDF file is extracted using [Scholarcy API](https://ref.scholarcy.com/api/). This bib
+
+![Procedure](pdf_image.pdf)
+
+## Credits
 The original version of ACL pubcheck was written by Yichao Zhou, Iz Beltagy, Steven Bethard, Ryan Cotterell and Tanmoy Chakraborty in their role as publications chairs of [NAACL 2021](https://2021.naacl.org/organization/). The tool was improved by Ryan Cotterell and Danilo Croce in their role as publication chairs of [ACL 2022](https://www.2022.aclweb.org/organisers) and [NAACL 2022](https://2022.naacl.org/). Pranav A added the name checking functions to this toolkit.
