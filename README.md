@@ -29,7 +29,7 @@ Demo version of PDF name checking is available [here](https://pdf-name-change-ch
 
 The bibilography from your PDF file is extracted using [Scholarcy API](https://ref.scholarcy.com/api/). This bib
 
-![Procedure](pdf_image.pdf)
+![Procedure](pdf_image.png)
 
 ## Credits
 The original version of ACL pubcheck was written by Yichao Zhou, Iz Beltagy, Steven Bethard, Ryan Cotterell and Tanmoy Chakraborty in their role as publications chairs of [NAACL 2021](https://2021.naacl.org/organization/). The tool was improved by Ryan Cotterell and Danilo Croce in their role as publication chairs of [ACL 2022](https://www.2022.aclweb.org/organisers) and [NAACL 2022](https://2022.naacl.org/). Pranav A added the name checking functions to this toolkit.
