@@ -102,8 +102,9 @@ class PDFNameCheck:
                 # Bugfix: Sometimes there are two names in a name
                 if additional:
                     old_paper_authors[additional] = new_paper_authors[additional]
-                    old_paper_authors.insert(
-                        additional+1, new_paper_authors[additional+1])
+                    if additional+1 < len(new_paper_authors):
+                        old_paper_authors.insert(
+                            additional+1, new_paper_authors[additional+1])
                 name_list[paper] = {}
                 name_list[paper]['old'] = old_paper_authors
                 name_list[paper]['new'] = new_paper_authors
