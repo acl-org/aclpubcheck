@@ -17,11 +17,31 @@ If you find that ACL pubcheck gives you a margin error due to a figure that runs
 
 ## Updating the names in citations
 
-Our toolkit now automatically checks your citations and will leave a warning if you have used incorrect names or author list. Please have a look [here](https://2021.naacl.org/blog/name-change-procedure/) on why it is important to use updated citations.
+### Description
 
-Some of the warnings generated for citations may be spurious and inaccurate, due to parsing and indexing errors. We encourage you to double check the citations and update them depending on the latest source. You can fix your bib files using the toolkit like [rebiber](https://github.com/yuchenlin/rebiber).
+Our toolkit now automatically checks your citations and will leave a warning if you have used incorrect names or author list. Please have a look [here](https://2021.naacl.org/blog/name-change-procedure/) on why it is important to use updated citations.
 
 Demo version of PDF name checking is available [here](https://pdf-name-change-checking.herokuapp.com/).
 
-**Credits**
+### How it's done
+
+The bibilography from your PDF file is extracted using [Scholarcy API](https://ref.scholarcy.com/api/). Each bib entry in this bib file is updated by pulling information from ACL anthology, DBLP and arXiv; by using fuzzy match of the titles. After updating the bibs, the author names are compared and mismatches in author names are warned.
+
+![Procedure](pdf_image.png)
+
+### Functionality
+
+The functions are present in `aclpubcheck/name_check.py`. The class `PDFNameCheck` is used in `formatchecker.py`.
+
+### Caveats
+
+Some of the warnings generated for citations may be spurious and inaccurate, due to parsing and indexing errors. We encourage you to double check the citations and update them depending on the latest source. You can fix your bib files using the toolkit like [rebiber](https://github.com/yuchenlin/rebiber).
+
+### Screenshots
+
+This is how the warnings appear for the outdated names. You would be directed to a URL where you can correct the citations. We are not showing the name changes as it might out the deadnames in the warnings.
+
+![Screenshot](screenshot.png)
+
+## Credits
 The original version of ACL pubcheck was written by Yichao Zhou, Iz Beltagy, Steven Bethard, Ryan Cotterell and Tanmoy Chakraborty in their role as publications chairs of [NAACL 2021](https://2021.naacl.org/organization/). The tool was improved by Ryan Cotterell and Danilo Croce in their role as publication chairs of [ACL 2022](https://www.2022.aclweb.org/organisers) and [NAACL 2022](https://2022.naacl.org/). Pranav A added the name checking functions to this toolkit.
