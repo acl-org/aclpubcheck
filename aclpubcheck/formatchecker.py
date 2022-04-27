@@ -424,11 +424,10 @@ class Formatter(object):
 
         # The following checks fail in ~60% of the papers. TODO: relax them a bit
 
-        # Additional code for name checking starts here
-        config = self.make_name_check_config()
-        output_strings = self.pdf_namecheck.execute(config)
-        self.logs[Warn.BIB] += output_strings
-        # Additional code for name checking ends here
+        if args.disable_name_check:
+            config = self.make_name_check_config()
+            output_strings = self.pdf_namecheck.execute(config)
+            self.logs[Warn.BIB] += output_strings
 
         if doi_url_count < 3:
             self.logs[Warn.BIB] += [f"Bibliography should use ACL Anthology DOIs whenever possible. Only {doi_url_count} references do."]
@@ -460,6 +459,7 @@ def main():
     parser.add_argument('--paper_type', choices={"short", "long", "other"},
                         default='long')
     parser.add_argument('--num_workers', type=int, default=1)
+    parser.add_argument('--disable_name_check', action='store_false')
 
     args = parser.parse_args()
     
