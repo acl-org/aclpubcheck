@@ -35,7 +35,7 @@ The functions are present in `aclpubcheck/name_check.py`. The class `PDFNameChec
 
 ### Caveats
 
-Some of the warnings generated for citations may be spurious and inaccurate, due to parsing and indexing errors. We encourage you to double check the citations and update them depending on the latest source. You can fix your bib files using the toolkit like [rebiber](https://github.com/yuchenlin/rebiber).
+Some of the warnings generated for citations may be spurious and inaccurate, due to parsing and indexing errors. We encourage you to double check the citations and update them depending on the latest source. If you believe that your citation is updated and correct, then please ignore those warnings. You can fix your bib files using the toolkit like [rebiber](https://github.com/yuchenlin/rebiber).
 
 ### Screenshots
 
