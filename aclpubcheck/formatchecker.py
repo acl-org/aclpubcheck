@@ -123,7 +123,7 @@ class Formatter(object):
             print("In general, it is required that you fix errors for your paper to be published. Fixing warnings is optional, but recommended.")
             print("Important: Some of the margin errors may be spurious. The library detects the location of images, but not whether they have a white background that blends in.")
             print("Important: Some of the warnings generated for citations may be spurious and inaccurate, due to parsing and indexing errors.")
-            print("We encourage you to double check the citations and update them depending on the latest source.")
+            print("We encourage you to double check the citations and update them depending on the latest source. If you believe that your citation is updated and correct, then please ignore those warnings.")
 
             if errors >= 1:
                 return logs_json
