@@ -62,7 +62,7 @@ class Formatter(object):
         self.pdf_namecheck = PDFNameCheck()
 
 
-    def format_check(self, submission, paper_type, output_dir = ".", print_only_errors = False):
+    def format_check(self, submission, paper_type, output_dir = ".", print_only_errors = False, check_references = False):
         """
         Return True if the paper is correct, False otherwise.
         """
@@ -80,7 +80,9 @@ class Formatter(object):
         self.check_page_margin(output_dir)
         self.check_page_num(paper_type)
         self.check_font()
-        self.check_references()
+
+        if check_references:
+            self.check_references()
 
         # TODO: put json dump back on
         output_file = "errors-{0}.json".format(self.number)
@@ -114,7 +116,8 @@ class Formatter(object):
             if warnings == 1:
                 warning_text = "warning"
 
-            if print_only_errors == False or errors >= 1:
+
+            if print_only_errors == False:
                 json.dump(logs_json, open(os.path.join(output_dir,output_file), 'w'))  # always write a log file even if it is empty
 
             # display to user

@@ -9,7 +9,8 @@ install_requires = [
 	"rebiber",
 	"pybtex",
 	"pylatexenc",
-	"Unidecode"
+	"Unidecode",
+	"tsv"
 ]
 
 
