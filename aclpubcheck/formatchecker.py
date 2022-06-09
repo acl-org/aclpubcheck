@@ -14,7 +14,7 @@ from termcolor import colored
 import os
 import numpy as np
 import traceback
-from name_check import PDFNameCheck
+from aclpubcheck.name_check import PDFNameCheck
 from argparse import Namespace
 
 

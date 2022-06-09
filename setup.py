@@ -18,5 +18,10 @@ setup(
 	name="aclpubcheck",
 	install_requires=install_requires,
 	version="0.1",
-	scripts=[]
+	scripts=[],
+	entry_points = {
+		'console_scripts': [
+			"aclpubcheck=aclpubcheck.formatchecker:main",
+  		],	
+	},
 )
