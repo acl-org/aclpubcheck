@@ -356,6 +356,7 @@ class Formatter(object):
         correct_fontnames = set(["NimbusRomNo9L-Regu",
                                  "TeXGyreTermesX-Regular",
                                  "TimesNewRomanPSMT",
+                                 "ICWANT+STIXGeneral-Regular",
                                  ])
 
         fonts = defaultdict(int)
