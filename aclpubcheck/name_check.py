@@ -1,10 +1,11 @@
-import os
-import rebiber
-from pylatexenc.latex2text import LatexNodes2Text
-from pybtex.database import parse_file
 import contextlib
-from unidecode import unidecode
+import os
 import re
+
+import rebiber
+from pybtex.database import parse_file
+from pylatexenc.latex2text import LatexNodes2Text
+from unidecode import unidecode
 
 
 class PDFNameCheck:

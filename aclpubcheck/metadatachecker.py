@@ -3,15 +3,14 @@ import collections
 import itertools
 import os
 import os.path
-import regex as re
-import unicodedata
 import textwrap
-
-import pandas as pd
-import pdfplumber
-import unidecode
+import unicodedata
 
 import googletools
+import pandas as pd
+import pdfplumber
+import regex as re
+import unidecode
 
 
 def _clean_str(value):

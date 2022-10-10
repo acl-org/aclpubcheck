@@ -43,5 +43,16 @@ This is how the warnings appear for the outdated names. You would be directed to
 
 ![Screenshot](screenshot.png)
 
+### Development
+
+- Install conda/miniconda/mamba
+- Install Python Poetry
+- Run `conda create -n acl python=3.9`
+- Run `poetry install`
+
+### Publishing
+
+- Run `poetry build` then `poetry publish`
+
 ## Credits
 The original version of ACL pubcheck was written by Yichao Zhou, Iz Beltagy, Steven Bethard, Ryan Cotterell and Tanmoy Chakraborty in their role as publications chairs of [NAACL 2021](https://2021.naacl.org/organization/). The tool was improved by Ryan Cotterell and Danilo Croce in their role as publication chairs of [ACL 2022](https://www.2022.aclweb.org/organisers) and [NAACL 2022](https://2022.naacl.org/). Pranav A added the name checking functions to this toolkit.

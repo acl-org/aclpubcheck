@@ -1,0 +1,49 @@
+[tool.poetry]
+name = "aclpubcheck"
+version = "0.2.0"
+description = ""
+authors = ["Yichao Zhou", "Iz Beltagy", "Steven Bethard", "Ryan Cotterell", "Tanmoy Chakraborty", "Danilo Croce", "Pranav A", "Pedro Rodriguez"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+tqdm = "^4.64.1"
+termcolor = "^2.0.1"
+pandas = "^1.5.0"
+pdfplumber = "^0.7.5"
+rebiber = "^1.1.3"
+pybtex = "^0.24.0"
+pylatexenc = "^2.10"
+Unidecode = "^1.3.6"
+tsv = "^1.2"
+
+[tool.poetry.scripts]
+aclpubcheck = "aclpubcheck.formatchecker:main"
+
+
+[tool.poetry.group.dev.dependencies]
+isort = "^5.10.1"
+black = "^22.10.0"
+ipython = "^8.5.0"
+twine = "^4.0.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[project]
+name = "aclpubcheck"
+version = "0.2.0"
+readme = "README.md"
+requires-python = ">=3.8"
+description = "ACL Publication Check Script"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/acl-org/aclpubcheck"
+"Bug Tracker" = "https://github.com/acl-org/aclpubcheck/issues"

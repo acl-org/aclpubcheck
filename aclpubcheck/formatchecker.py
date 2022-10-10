@@ -4,19 +4,20 @@ python3 formatchecker.py [-h] [--paper_type {long,short,other}] file_or_dir [fil
 
 import argparse
 import json
-from enum import Enum
+import os
+import traceback
+from argparse import Namespace
 from collections import defaultdict
+from enum import Enum
 from os import walk
 from os.path import isfile, join
-import pdfplumber
-from tqdm import tqdm
-from termcolor import colored
-import os
-import numpy as np
-import traceback
-from name_check import PDFNameCheck
-from argparse import Namespace
 
+import numpy as np
+import pdfplumber
+from termcolor import colored
+from tqdm import tqdm
+
+from aclpubcheck.name_check import PDFNameCheck
 
 
 class Error(Enum):

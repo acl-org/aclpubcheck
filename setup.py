@@ -1,6 +1,5 @@
 from setuptools import setup
 
-
 install_requires = [
 	"tqdm",
 	"termcolor",
@@ -17,6 +16,6 @@ install_requires = [
 setup(
 	name="aclpubcheck",
 	install_requires=install_requires,
-	version="0.1",
+	version="0.2",
 	scripts=[]
 )
