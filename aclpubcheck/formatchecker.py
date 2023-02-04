@@ -1,5 +1,5 @@
 '''
-python3 formatchecker.py [-h] [--paper_type {long,short,other}] file_or_dir [file_or_dir ...]
+python3 formatchecker.py [-h] [--paper_type {long,short,demo,other}] file_or_dir [file_or_dir ...]
 '''
 
 import argparse
@@ -319,7 +319,7 @@ class Formatter(object):
         # TODO: Enable uploading a paper_type file to include all papers' types.
 
         # thresholds for different types of papers
-        standards = {"short": 5, "long": 9, "other": float("inf")}
+        standards = {"short": 5, "long": 9, "demo": 6, "other": float("inf")}
         page_threshold = standards[paper_type.lower()]
         candidates = {"References", "Acknowledgments", "Acknowledgement", "Acknowledgment", "EthicsStatement", "EthicalConsiderations", "Ethicalconsiderations", "BroaderImpact", "EthicalConcerns", "EthicalStatement", "EthicalDeclaration", "Limitations"}
         #acks = {"Acknowledgment", "Acknowledgement"}
@@ -460,13 +460,13 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('submission_paths', metavar='file_or_dir', nargs='+',
                         default=[])
-    parser.add_argument('--paper_type', choices={"short", "long", "other"},
+    parser.add_argument('--paper_type', choices={"short", "long", "demo", "other"},
                         default='long')
     parser.add_argument('--num_workers', type=int, default=1)
     parser.add_argument('--disable_name_check', action='store_false')
 
     args = parser.parse_args()
-    
+
 
     # retrieve file paths
     paths = {join(root, file_name)
