@@ -13,7 +13,11 @@ If you find that ACL pubcheck gives you a margin error due to a figure that runs
 
 **Note**: Additional info can be found in the PDF document ``aclpubcheck_additional_info.pdf`` included in this package.
 
-**Online Version**: If you are having trouble with installing and using the Python toolkit directly, you can use a CodaLab version online https://colab.research.google.com/drive/1Sq6ilmrFUQpUFMkV71U8-Wf0madW-Uer?usp=sharing.
+## Online Versions 
+
+If you are having trouble with installing and using the Python toolkit directly, you can use:
+- a **CodaLab version** at https://colab.research.google.com/drive/1Sq6ilmrFUQpUFMkV71U8-Wf0madW-Uer?usp=sharing (thank Danilo Croce).
+- an **Hugging Face Space** at https://huggingface.co/spaces/teelinsan/aclpubcheck (thank Andrea Santilli). More info about this version can be found at https://github.com/teelinsan/aclpubcheck-gui
 
 ## Updating the names in citations
 
