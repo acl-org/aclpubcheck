@@ -11,6 +11,8 @@ You can run the script on a paper as follows
 
 If you find that ACL pubcheck gives you a margin error due to a figure that runs into the margin, you can often fix the problem by applying the [adjustbox package](https://ctan.org/pkg/adjustbox?lang=en). Additionally, if the margin error is caused by an equation, then it may help to break the equation over two lines.
 
+ACL pubcheck is meant to be run on the camera ready version of the paper, not on the review version (e.g. anonymous, line-numbered submission version). Running ACL pubcheck on a line-numbered version will result in a stream of spurious errors related to the numbers in the margins.
+
 **Note**: Additional info can be found in the PDF document ``aclpubcheck_additional_info.pdf`` included in this package.
 
 ## Online Versions 
