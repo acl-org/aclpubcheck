@@ -342,6 +342,11 @@ class Formatter(object):
         # if the first marker appears after the first line of page 10,
         # there is high probability the paper exceeds the page limit.
 
+        # If we reached this state and that marker is still None it means all pages already have errors
+        # We can return here to print the already existing errors
+        if marker is None:
+            return
+
         if marker > (page_threshold + 1, 1):
             page, line = marker
             self.logs[Error.PAGELIMIT] = [f"Paper exceeds the page limit "
