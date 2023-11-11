@@ -362,6 +362,7 @@ class Formatter(object):
                                  "TeXGyreTermesX-Regular",
                                  "TimesNewRomanPSMT",
                                  "ICWANT+STIXGeneral-Regular",
+                                 "ICZIZQ+Inconsolatazi4-Regular"
                                  ])
 
         fonts = defaultdict(int)
