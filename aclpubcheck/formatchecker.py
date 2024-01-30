@@ -12,6 +12,7 @@ import pdfplumber
 from tqdm import tqdm
 from termcolor import colored
 import os
+import re
 import numpy as np
 import traceback
 from name_check import PDFNameCheck
@@ -258,6 +259,10 @@ class Formatter(object):
                         if x1 - x0 <= 1 or y1 - y0 <= 1:
                             continue
 
+                        # ignore line numbers in the margin for papers under submission
+                        if args.draft and (violation == Margin.LEFT or violation == Margin.RIGHT) and re.match("\d\d\d", word["text"]):
+                            continue
+
                         # cropping the image to check if it is white
                         # i.e., all pixels set to 255
                         try:
@@ -320,6 +325,9 @@ class Formatter(object):
 
         # thresholds for different types of papers
         standards = {"short": 5, "long": 9, "demo": 7, "other": float("inf")}
+        if args.draft:
+            # papers under submission have lower page limits
+            standards = {k: v - 1 for k, v in standards.items()}
         page_threshold = standards[paper_type.lower()]
         candidates = {"References", "Acknowledgments", "Acknowledgement", "Acknowledgment", "EthicsStatement", "EthicalConsiderations", "Ethicalconsiderations", "BroaderImpact", "EthicalConcerns", "EthicalStatement", "EthicalDeclaration", "Limitations"}
         #acks = {"Acknowledgment", "Acknowledgement"}
@@ -468,6 +476,7 @@ def main():
                         default=[])
     parser.add_argument('--paper_type', choices={"short", "long", "demo", "other"},
                         default='long')
+    parser.add_argument('--draft', action='store_true', default=False)
     parser.add_argument('--num_workers', type=int, default=1)
     parser.add_argument('--disable_name_check', action='store_false')
 
