@@ -3,7 +3,7 @@ ACL pubcheck is a Python tool that automatically detects font errors, author for
 
 ## Installation
 
-The simplest way to use `aclpubcheck` is to install using `pip` directly from the github source (NOT from `pypi`):
+The simplest way to use `aclpubcheck` is to install using `pip` directly from the GitHub repository (DIFFERENT from `pypi`):
 
 ```bash
 pip3 install git+https://github.com/acl-org/aclpubcheck
