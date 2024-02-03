@@ -1,2 +1,5 @@
 aclpubcheck.egg-info
 .idea
+dist/*.egg
+build/
+*/__pycache__
