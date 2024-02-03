@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 
 install_requires = [
@@ -19,6 +19,7 @@ setup(
 	install_requires=install_requires,
 	version="0.1",
 	scripts=[],
+	packages=find_packages(include=["aclpubcheck*"]),
 	entry_points = {
 		'console_scripts': [
 			"aclpubcheck=aclpubcheck.__main__:main",
