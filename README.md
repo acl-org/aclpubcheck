@@ -50,7 +50,7 @@ ACL pubcheck is meant to be run on the camera ready version of the paper, not on
 ## Online Versions 
 
 If you are having trouble with installing and using the Python toolkit directly, you can use:
-- a **Colab version** at https://colab.research.google.com/drive/1Sq6ilmrFUQpUFMkV71U8-Wf0madW-Uer?usp=sharing (thank Danilo Croce).
+- a [**Colab version** you can use to directly upload and run aclpubcheck](https://colab.research.google.com/github/acl-org/aclpubcheck/blob/main/aclpubcheck_online.ipynb) without local installation (thank Danilo Croce).
 - a **Hugging Face Space** at https://huggingface.co/spaces/teelinsan/aclpubcheck (thank Andrea Santilli). More info about this version can be found at https://github.com/teelinsan/aclpubcheck-gui
 
 ## Updating the names in citations
