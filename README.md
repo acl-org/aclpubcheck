@@ -1,13 +1,45 @@
 # ACL pubcheck
 ACL pubcheck is a Python tool that automatically detects font errors, author formatting errors, margin violations, outdated citations as well as many other common formatting errors in papers that are using the LaTeX sty file associated with ACL venues. The script can be used to check your papers before you submit to a conference. (We highly recommend running ACL pubcheck on your papers *pre-submission*&mdash;a well formatted paper helps keep the reviewers focused on the scientific content.) However, its main purpose is to ensure your accepted paper is properly formatted, i.e., it follows the venue's style guidelines. The script is used by the publication chairs at most ACL events to check for formatting issues. Indeed, running this script yourself and fixing errors before uploading the camera-ready version of your paper will often save you a personalized email from the publication chairs.
 
-You can install the package by cloning the repo
-1. ``git clone git@github.com:acl-org/aclpubcheck.git`` or ``git clone https://github.com/acl-org/aclpubcheck.git``
-2. ``cd aclpubcheck``
-3. ``pip install -e .``
+## Installation
 
-You can run the script on a paper as follows
-``python3 aclpubcheck/formatchecker.py --paper_type PAPER_TYPE PAPER_NAME.pdf`` where ``PAPER_TYPE`` is taken from the set {long,short,demo,other}. You should choose either long,  short or demo depending on the type of paper you have accepted.
+The simplest way to use `aclpubcheck` is to install using `pip` directly from the GitHub repository (DIFFERENT from `pypi`):
+
+```bash
+pip3 install git+https://github.com/acl-org/aclpubcheck
+```
+
+Alternatively, you can install directly from source and build locally:
+```bash
+# clone using ssh
+git clone git@github.com:acl-org/aclpubcheck.git
+# or http
+git clone https://github.com/acl-org/aclpubcheck.git
+
+cd aclpubcheck/
+
+# install locally
+pip install -e .
+```
+
+## Usage
+
+Once installed, you can use apply it on a PDF:
+
+```bash
+# Script execution
+aclpubcheck --paper_type PAPER_TYPE path/to/paper.pdf
+
+# Module execution (in case script execution does not work)
+python3 -m aclpubcheck --paper_type PAPER_TYPE path/to/paper.pdf
+```
+
+Replace `PAPER_TYPE` with one of (1) `long`, (2) `short`, (3) `demo`, depending on the type of paper you have accepted. Then, change `path/to/paper.pdf` to be the path to your paper. For example:
+
+```bash
+# -p is a shorthand for --paper_type
+python3 -m aclpubcheck --p long example/2023.acl-tutorials.1.pdf
+```
 
 If you find that ACL pubcheck gives you a margin error due to a figure that runs into the margin, you can often fix the problem by applying the [adjustbox package](https://ctan.org/pkg/adjustbox?lang=en). Additionally, if the margin error is caused by an equation, then it may help to break the equation over two lines.
 
@@ -18,7 +50,7 @@ ACL pubcheck is meant to be run on the camera ready version of the paper, not on
 ## Online Versions 
 
 If you are having trouble with installing and using the Python toolkit directly, you can use:
-- a **Colab version** at https://colab.research.google.com/drive/1Sq6ilmrFUQpUFMkV71U8-Wf0madW-Uer?usp=sharing (thank Danilo Croce).
+- a [**Colab version** you can use to directly upload and run aclpubcheck](https://colab.research.google.com/github/acl-org/aclpubcheck/blob/main/aclpubcheck_online.ipynb) without local installation (thank Danilo Croce).
 - a **Hugging Face Space** at https://huggingface.co/spaces/teelinsan/aclpubcheck (thank Andrea Santilli). More info about this version can be found at https://github.com/teelinsan/aclpubcheck-gui
 
 ## Updating the names in citations

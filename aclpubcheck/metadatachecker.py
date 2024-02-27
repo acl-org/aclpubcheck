@@ -11,7 +11,7 @@ import pandas as pd
 import pdfplumber
 import unidecode
 
-import googletools
+from . import googletools
 
 
 def _clean_str(value):

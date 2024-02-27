@@ -3,6 +3,7 @@ python3 formatchecker.py [-h] [--paper_type {long,short,demo,other}] file_or_dir
 '''
 
 import argparse
+from argparse import Namespace
 import json
 from enum import Enum
 from collections import defaultdict
@@ -14,9 +15,8 @@ from termcolor import colored
 import os
 import numpy as np
 import traceback
-from name_check import PDFNameCheck
-from argparse import Namespace
 
+from .name_check import PDFNameCheck
 
 
 class Error(Enum):
@@ -466,8 +466,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('submission_paths', metavar='file_or_dir', nargs='+',
                         default=[])
-    parser.add_argument('--paper_type', choices={"short", "long", "demo", "other"},
-                        default='long')
+    parser.add_argument('-p', '--paper_type', choices={"short", "long", "demo", "other"},
+                        default='long', help="")
     parser.add_argument('--num_workers', type=int, default=1)
     parser.add_argument('--disable_name_check', action='store_false')
 
