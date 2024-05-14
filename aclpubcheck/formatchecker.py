@@ -321,7 +321,7 @@ class Formatter(object):
         # thresholds for different types of papers
         standards = {"short": 5, "long": 9, "demo": 7, "other": float("inf")}
         page_threshold = standards[paper_type.lower()]
-        candidates = {"References", "Acknowledgments", "Acknowledgement", "Acknowledgment", "EthicsStatement", "EthicalConsiderations", "Ethicalconsiderations", "BroaderImpact", "EthicalConcerns", "EthicalStatement", "EthicalDeclaration", "Limitations"}
+        candidates = {"References", "Acknowledgments", "Acknowledgement", "Acknowledgment", "EthicsStatement", "EthicalConsiderations", "Ethicalconsiderations", "BroaderImpact", "EthicalConcerns", "EthicalStatement", "EthicalDeclaration", "Limitations", "Limitation"}
         #acks = {"Acknowledgment", "Acknowledgement"}
 
         # Find (references, acknowledgements, ethics).
