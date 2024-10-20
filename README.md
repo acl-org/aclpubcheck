@@ -47,6 +47,11 @@ ACL pubcheck is meant to be run on the camera ready version of the paper, not on
 
 **Note**: Additional info can be found in the PDF document ``aclpubcheck_additional_info.pdf`` included in this package.
 
+## Page Numbering
+
+Typically, the space at the bottom of a paper should be left empty, as page numbers will be added during the watermarking process of the proceedings. By default, ACL pubcheck ensures that a margin of approximately 2 cm at the bottom of each page is left blank. If any text is detected in this area, such as page numbers mistakenly added, a warning is generated. However, if this area must contain information, or if you need to bypass this check for any reason, you can disable it by using the parameter `--disable_bottom_check`.
+
+
 ## Online Versions 
 
 If you are having trouble with installing and using the Python toolkit directly, you can use:

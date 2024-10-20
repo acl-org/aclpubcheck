@@ -53,6 +53,7 @@ class Formatter(object):
         self.right_offset = 4.5
         self.left_offset = 2
         self.top_offset = 1
+        self.bottom_offset = 1
 
         # this is used to check if an area out of the margin is a "false positive",
         # i.e., an area containing invisible symbols. When a candidate area out of
@@ -270,6 +271,27 @@ class Formatter(object):
                           # if there are some errors during cropping, it is better to check
                           pages_image[i] += [(word, violation)]
 
+                # CHECK THE AREA BELOW THE TEXT, it should be empty as it is expected to
+                # be populated with watermark and pages during the construction of the
+                # proceedings
+                if args.disable_bottom_check:
+                    bpixels = 62
+                    bbox = (0, Page.HEIGHT.value - bpixels, Page.WIDTH.value - self.bottom_offset, Page.HEIGHT.value - self.bottom_offset)
+                    word = {"top": bbox[1], "bottom": bbox[3]}
+            
+                    # cropping the image to check if it is white
+                    # i.e., all pixels set to 255
+                    try:
+                        cropped_page = p.crop(bbox)
+                        image_obj = cropped_page.to_image(resolution=100)
+                        if np.mean(image_obj.original) != self.background_color:
+                            print("Found text violation:\t" + str(Margin.BOTTOM) + "\t" + str(word))
+                            pages_text[i] += [(word, Margin.BOTTOM)]
+                    except:
+                      # if there are some errors during cropping, it is better to check
+                      pages_image[i] += [(word, Margin.BOTTOM)]
+                      traceback.print_exc()
+
             except:
                 traceback.print_exc()
                 perror.append(i+1)
@@ -296,6 +318,10 @@ class Formatter(object):
                     elif violation == Margin.TOP:
                         self.logs[Error.MARGIN] += ["Text on page {} bleeds into the top margin.".format(page+1)]
                         bbox = (20, int(word["top"]-20), 80, int(word["bottom"]+20))
+                        im.draw_rect(bbox, fill=None, stroke="red", stroke_width=5)
+                    elif violation == Margin.BOTTOM:
+                        self.logs[Error.MARGIN] += ["Text on page {} bleeds into the bottom margin. It should be empty (e.g., without page number) and populated when building the proceedings.".format(page+1)]
+                        bbox = (0, int(word["top"]), Page.WIDTH.value, int(word["bottom"]))
                         im.draw_rect(bbox, fill=None, stroke="red", stroke_width=5)
                     else:
                         # TODO: add bottom margin violations
@@ -470,6 +496,8 @@ def main():
                         default='long', help="")
     parser.add_argument('--num_workers', type=int, default=1)
     parser.add_argument('--disable_name_check', action='store_false')
+    parser.add_argument('--disable_bottom_check', action='store_false')
+
 
     args = parser.parse_args()
 
