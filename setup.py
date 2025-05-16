@@ -9,6 +9,7 @@ install_requires = [
 	"rebiber<2.0.0",  # 2.0 introduces breaking changes
 	"pybtex",
 	"pylatexenc",
+	"setuptools",
 	"Unidecode",
 	"tsv"
 ]
