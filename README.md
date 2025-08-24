@@ -38,7 +38,7 @@ Replace `PAPER_TYPE` with one of (1) `long`, (2) `short`, (3) `demo`, depending 
 
 ```bash
 # -p is a shorthand for --paper_type
-python3 -m aclpubcheck --p long example/2023.acl-tutorials.1.pdf
+python3 -m aclpubcheck -p long example/2023.acl-tutorials.1.pdf
 ```
 
 If you find that ACL pubcheck gives you a margin error due to a figure that runs into the margin, you can often fix the problem by applying the [adjustbox package](https://ctan.org/pkg/adjustbox?lang=en). Additionally, if the margin error is caused by an equation, then it may help to break the equation over two lines.
