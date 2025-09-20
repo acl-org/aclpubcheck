@@ -384,12 +384,12 @@ class Formatter(object):
     def check_font(self):
         """ Checks the fonts. """
 
-        correct_fontnames = set(["NimbusRomNo9L-Regu",
-                                 "TeXGyreTermesX-Regular",
-                                 "TeXGyreTermes-Regular",
+        correct_fontnames = set(["NimbusRomNo9L-Reg",
+                                 "TeXGyreTermesX-Reg",
+                                 "TeXGyreTermes-Reg",
                                  "TimesNewRomanPSMT",
-                                 "ICWANT+STIXGeneral-Regular",
-                                 "ICZIZQ+Inconsolatazi4-Regular"
+                                 "ICWANT+STIXGeneral-Reg",
+                                 "ICZIZQ+Inconsolatazi4-Reg"
                                  ])
 
         fonts = defaultdict(int)
