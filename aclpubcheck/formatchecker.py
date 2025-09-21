@@ -384,11 +384,12 @@ class Formatter(object):
     def check_font(self):
         """ Checks the fonts. """
 
-        correct_fontnames = set(["NimbusRomNo9L-Regu",
-                                 "TeXGyreTermesX-Regular",
+        correct_fontnames = set(["NimbusRomNo9L-Reg",
+                                 "TeXGyreTermesX-Reg",
+                                 "TeXGyreTermes-Reg",
                                  "TimesNewRomanPSMT",
-                                 "ICWANT+STIXGeneral-Regular",
-                                 "ICZIZQ+Inconsolatazi4-Regular"
+                                 "ICWANT+STIXGeneral-Reg",
+                                 "ICZIZQ+Inconsolatazi4-Reg"
                                  ])
 
         fonts = defaultdict(int)
@@ -406,7 +407,7 @@ class Formatter(object):
         if max_font_count / sum_char_count < 0.35:  # the most used font should be used more than 35% of the time
             self.logs[Error.FONT] += ["Can't find the main font"]
 
-        if not any([max_font_name.endswith(correct_fontname) for correct_fontname in correct_fontnames]):  # the most used font should be `correct_fontname`
+        if not any([correct_fontname in max_font_name for correct_fontname in correct_fontnames]):  # the most used font should be `correct_fontname`
             self.logs[Error.FONT] += [f"Wrong font. The main font used is {max_font_name} when it should a font in {correct_fontnames}."]
 
     def make_name_check_config(self):
