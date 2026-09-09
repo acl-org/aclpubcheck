@@ -6,7 +6,7 @@ install_requires = [
 	"termcolor",
 	"pandas",
 	"pdfplumber",
-	"rebiber<2.0.0",  # 2.0 introduces breaking changes
+	"rebiber @ git+https://github.com/yuchenlin/rebiber@b917e36ec94084a84025eb06781b5aac96d1cedd",
 	"pybtex",
 	"pylatexenc",
 	"setuptools",
@@ -19,6 +19,7 @@ setup(
 	name="aclpubcheck",
 	install_requires=install_requires,
 	version="0.1",
+	python_requires=">=3.10",
 	scripts=[],
 	packages=find_packages(include=["aclpubcheck*"]),
 	entry_points = {
