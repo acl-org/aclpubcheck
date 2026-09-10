@@ -3,6 +3,8 @@ ACL pubcheck is a Python tool that automatically detects font errors, author for
 
 ## Installation
 
+Requires Python 3.10 or newer. Rebiber is installed from a pinned GitHub commit, following its [installation instructions](https://github.com/yuchenlin/rebiber#install).
+
 The simplest way to use `aclpubcheck` is with the [`uv`](https://docs.astral.sh/uv/) package manager. Install `uv` following [the guide](https://docs.astral.sh/uv/getting-started/installation/), and you can then install and run `aclpubcheck` with a one-liner:
 
 ```bash
