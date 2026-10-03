@@ -49,6 +49,15 @@ Replace `PAPER_TYPE` with one of (1) `long`, (2) `short`, (3) `demo`, depending 
 python3 -m aclpubcheck -p long example/2023.acl-tutorials.1.pdf
 ```
 
+Each run writes a JSON report for every paper, plus annotated PNG pages for margin errors, to the current directory. The reports are named after the paper ID, which is the file name without `.pdf`, cut at the first underscore: `1234_paper.pdf` gives `errors-1234.json` and `errors-1234-page-N.png`. If several PDFs in one run share an ID (ignoring case), such as `1234_original.pdf` and `1234_corrected.pdf`, their reports are named after the file name without `.pdf` instead (`errors-1234_original.json` and `errors-1234_corrected.json`). If PDFs in different directories also share a file name, the first 8 hex digits of the SHA-256 hash of each PDF are appended (`errors-1234_paper_3f9a1c2e.json`). A later run overwrites reports with the same names but does not delete other files, so annotated pages from an earlier run can remain next to a newer JSON report.
+
+To save the reports to another directory, which is created if needed, use `--output-dir` (or `-o`). To keep runs apart, use `--temp-output-dir`, which saves them to a new temporary directory. With either option, the directory is printed when the check starts and finishes.
+
+```bash
+aclpubcheck --paper_type PAPER_TYPE --output-dir path/to/reports path/to/paper.pdf
+aclpubcheck --paper_type PAPER_TYPE --temp-output-dir path/to/paper.pdf
+```
+
 If you find that ACL pubcheck gives you a margin error due to a figure that runs into the margin, you can often fix the problem by applying the [adjustbox package](https://ctan.org/pkg/adjustbox?lang=en). Additionally, if the margin error is caused by an equation, then it may help to break the equation over two lines.
 
 ACL pubcheck is meant to be run on the camera ready version of the paper, not on the review version (e.g. anonymous, line-numbered submission version). Running ACL pubcheck on a line-numbered version will result in a stream of spurious errors related to the numbers in the margins.
