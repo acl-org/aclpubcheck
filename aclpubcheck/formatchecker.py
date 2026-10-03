@@ -4,6 +4,7 @@ python3 formatchecker.py [-h] [--paper_type {long,short,demo,other}] file_or_dir
 
 import argparse
 from argparse import Namespace
+from functools import partial
 import json
 from enum import Enum
 from collections import defaultdict
@@ -519,7 +520,7 @@ def main():
     if args.num_workers > 1:
         from multiprocessing.pool import Pool
         with Pool(args.num_workers) as p:
-            list(tqdm(p.imap(worker, fileset), total=len(fileset)))
+            list(tqdm(p.imap(partial(worker, paper_type=args.paper_type), fileset), total=len(fileset)))
     else:
         # TODO: make the tqdm togglable
         #for submission in tqdm(fileset):
