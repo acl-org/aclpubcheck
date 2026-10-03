@@ -7,6 +7,7 @@ from argparse import Namespace
 import json
 from enum import Enum
 from collections import defaultdict
+from functools import partial
 from os import walk
 from os.path import isfile, join
 import pdfplumber
@@ -488,6 +489,12 @@ def worker(pdf_path, paper_type):
     return Formatter().format_check(submission=pdf_path, paper_type=paper_type)
 
 
+def init_worker(worker_args):
+    """ share the parsed arguments with pool processes that do not run main() """
+    global args
+    args = worker_args
+
+
 def main():
     global args
     parser = argparse.ArgumentParser()
@@ -516,15 +523,16 @@ def main():
     if not fileset:
         print(f"No PDF files found in {paths}")
 
+    check = partial(worker, paper_type=args.paper_type)
     if args.num_workers > 1:
         from multiprocessing.pool import Pool
-        with Pool(args.num_workers) as p:
-            list(tqdm(p.imap(worker, fileset), total=len(fileset)))
+        with Pool(args.num_workers, initializer=init_worker, initargs=(args,)) as p:
+            list(tqdm(p.imap(check, fileset), total=len(fileset)))
     else:
         # TODO: make the tqdm togglable
         #for submission in tqdm(fileset):
         for submission in fileset:
-            worker(submission, args.paper_type)
+            check(submission)
 
 if __name__ == "__main__":
     main()
