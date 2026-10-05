@@ -6,7 +6,7 @@ import argparse
 from argparse import Namespace
 import json
 from enum import Enum
-from collections import defaultdict
+from collections import Counter, defaultdict
 from functools import partial
 from os import walk
 from os.path import isfile, join
@@ -15,7 +15,10 @@ from tqdm import tqdm
 from termcolor import colored
 import os
 import numpy as np
+import hashlib
+import tempfile
 import traceback
+import unicodedata
 
 from .name_check import PDFNameCheck
 
@@ -47,6 +50,12 @@ class Margin(Enum):
     LEFT = "left"
 
 
+def paper_id(submission):
+    """ the paper ID that names the reports: the PDF file name without .pdf, cut at its first underscore """
+    # TODO: make this less of a hack
+    return os.path.basename(submission).split("_")[0].replace(".pdf", "")
+
+
 class Formatter(object):
 
     def __init__(self):
@@ -64,14 +73,14 @@ class Formatter(object):
         self.pdf_namecheck = PDFNameCheck()
 
 
-    def format_check(self, submission, paper_type, output_dir = ".", print_only_errors = False, check_references = False):
+    def format_check(self, submission, paper_type, output_dir = ".", print_only_errors = False, check_references = False, report_name = None):
         """
         Return True if the paper is correct, False otherwise.
+        Reports are named errors-<report_name>, which defaults to the paper ID.
         """
         print(f"Checking {submission}")
 
-        # TOOD: make this less of a hack
-        self.number = submission.split("/")[-1].split("_")[0].replace(".pdf", "")
+        self.number = paper_id(submission) if report_name is None else report_name
         self.pdf = pdfplumber.open(submission)
         self.logs = defaultdict(list)  # reset log before calling the format-checking functions
         self.page_errors = set()
@@ -88,6 +97,8 @@ class Formatter(object):
 
         # TODO: put json dump back on
         output_file = "errors-{0}.json".format(self.number)
+        if output_dir != ".":
+            output_file = os.path.join(output_dir, output_file)
         # string conversion for json dump
         logs_json = {}
         for k, v in self.logs.items():
@@ -120,7 +131,8 @@ class Formatter(object):
 
 
             if print_only_errors == False:
-                json.dump(logs_json, open(os.path.join(output_dir,output_file), 'w'))  # always write a log file even if it is empty
+                with open(output_file, 'w') as f:
+                    json.dump(logs_json, f)  # always write a log file even if it is empty
 
             # display to user
             print()
@@ -138,7 +150,8 @@ class Formatter(object):
 
         else:
             if print_only_errors == False:
-                json.dump(logs_json, open(os.path.join(output_dir,output_file), 'w'))
+                with open(output_file, 'w') as f:
+                    json.dump(logs_json, f)
 
             print(colored("All Clear!", "green"))
             return logs_json
@@ -484,9 +497,41 @@ class Formatter(object):
 
 
 args = None
-def worker(pdf_path, paper_type):
+def worker(pdf_path, paper_type, output_dir=".", report_name=None):
     """ process one pdf """
-    return Formatter().format_check(submission=pdf_path, paper_type=paper_type)
+    return Formatter().format_check(submission=pdf_path, paper_type=paper_type, output_dir=output_dir, report_name=report_name)
+
+
+def job_worker(job, **options):
+    """ process one (pdf, report name) pair """
+    pdf_path, report_name = job
+    return worker(pdf_path, report_name=report_name, **options)
+
+
+def report_names(pdf_paths):
+    """
+    Name each PDF's reports after its paper ID. PDFs that share an ID use their
+    file names instead, and PDFs that also share a file name, in different
+    directories, add a hash of their content. Names are compared as
+    case-insensitive file systems compare them, ignoring case and Unicode
+    normalization.
+    """
+    def key(name):
+        return unicodedata.normalize("NFD", unicodedata.normalize("NFD", name).casefold())
+
+    def shared(names):
+        counts = Counter(map(key, names))
+        return [counts[key(name)] > 1 for name in names]
+
+    def content_hash(pdf):
+        with open(pdf, "rb") as f:
+            return hashlib.sha256(f.read()).hexdigest()[:8]
+
+    ids = [paper_id(pdf) for pdf in pdf_paths]
+    names = [os.path.basename(pdf)[:-len(".pdf")] if clash else id_
+             for pdf, id_, clash in zip(pdf_paths, ids, shared(ids))]
+    return [f"{name}_{content_hash(pdf)}" if clash else name
+            for pdf, name, clash in zip(pdf_paths, names, shared(names))]
 
 
 def init_worker(worker_args):
@@ -505,6 +550,11 @@ def main():
     parser.add_argument('--num_workers', type=int, default=1)
     parser.add_argument('--disable_name_check', action='store_false')
     parser.add_argument('--disable_bottom_check', action='store_false')
+    output = parser.add_mutually_exclusive_group()
+    output.add_argument('-o', '--output-dir', metavar='PATH',
+                        help="directory for the JSON and PNG reports, created if missing (default: the current directory)")
+    output.add_argument('--temp-output-dir', action='store_true',
+                        help="write the reports to a new temporary directory")
 
 
     args = parser.parse_args()
@@ -517,22 +567,41 @@ def main():
              for file_name in file_names}
     paths.update(args.submission_paths)
 
-    # retrieve files
-    fileset = sorted([p for p in paths if isfile(p) and p.endswith(".pdf")])
+    # retrieve files, each once however its path is spelled
+    pdfs = {}
+    for p in sorted(paths):
+        if isfile(p) and p.endswith(".pdf"):
+            pdfs.setdefault(os.path.realpath(p), p)
+    fileset = sorted(pdfs.values())
 
     if not fileset:
         print(f"No PDF files found in {paths}")
+        return
 
-    check = partial(worker, paper_type=args.paper_type)
+    announce = args.temp_output_dir or args.output_dir is not None
+    if args.temp_output_dir:
+        output_dir = tempfile.mkdtemp(prefix="aclpubcheck-")
+    else:
+        output_dir = args.output_dir or "."
+        os.makedirs(output_dir, exist_ok=True)
+    if announce:
+        print(f"Saving reports to {output_dir}")
+
+    # name the reports before any check starts, so that parallel workers agree
+    jobs = list(zip(fileset, report_names(fileset)))
+    check = partial(job_worker, paper_type=args.paper_type, output_dir=output_dir)
     if args.num_workers > 1:
         from multiprocessing.pool import Pool
         with Pool(args.num_workers, initializer=init_worker, initargs=(args,)) as p:
-            list(tqdm(p.imap(check, fileset), total=len(fileset)))
+            list(tqdm(p.imap(check, jobs), total=len(jobs)))
     else:
         # TODO: make the tqdm togglable
         #for submission in tqdm(fileset):
-        for submission in fileset:
-            check(submission)
+        for job in jobs:
+            check(job)
+
+    if announce:
+        print(f"Reports saved to {output_dir}")
 
 if __name__ == "__main__":
     main()
