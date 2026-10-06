@@ -1,0 +1,33 @@
+[build-system]
+requires = ["uv_build>=0.12.17,<0.13.0"]
+build-backend = "uv_build"
+
+[project]
+name = "aclpubcheck"
+version = "0.1"
+description = "Check papers that use the ACL LaTeX style files for common formatting problems"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.10"
+dependencies = [
+    "tqdm",
+    "termcolor",
+    "pandas",
+    "pdfplumber",
+    "rebiber @ git+https://github.com/yuchenlin/rebiber@b917e36ec94084a84025eb06781b5aac96d1cedd",
+    "pybtex",
+    "pylatexenc",
+    "setuptools",
+    "Unidecode",
+    "tsv",
+]
+
+[project.urls]
+Repository = "https://github.com/acl-org/aclpubcheck"
+
+[project.scripts]
+aclpubcheck = "aclpubcheck.__main__:main"
+
+[tool.uv.build-backend]
+module-root = ""

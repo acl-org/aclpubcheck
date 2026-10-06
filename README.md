@@ -32,7 +32,13 @@ uvx --from git+https://github.com/acl-org/aclpubcheck \
 
 Replace `PAPER_TYPE` with `long`, `short`, or `demo`.
 
-You can also install ACL pubcheck directly from GitHub using `pip`:
+To install the `aclpubcheck` command permanently with `uv`:
+
+```bash
+uv tool install git+https://github.com/acl-org/aclpubcheck
+```
+
+You can also install ACL pubcheck directly from GitHub using `pip` 23.0 or newer. If your pip is older, as on Ubuntu 22.04, upgrade it first with `python3 -m pip install --upgrade pip`. Then install:
 
 ```bash
 pip3 install git+https://github.com/acl-org/aclpubcheck
