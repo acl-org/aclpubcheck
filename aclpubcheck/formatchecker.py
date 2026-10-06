@@ -7,7 +7,8 @@ from argparse import Namespace
 import json
 from enum import Enum
 from collections import Counter, defaultdict
-from functools import partial
+from dataclasses import dataclass
+from functools import cached_property, partial
 from os import walk
 from os.path import isfile, join
 import pdfplumber
@@ -56,9 +57,18 @@ def paper_id(submission):
     return os.path.basename(submission).split("_")[0].replace(".pdf", "")
 
 
+@dataclass(frozen=True)
+class CheckConfig:
+    """Switches for the optional checks; the CLI's --disable_* flags turn them off."""
+    bottom_check: bool = True
+    name_check: bool = True
+
+
 class Formatter(object):
 
-    def __init__(self):
+    def __init__(self, config: CheckConfig | None = None) -> None:
+        self.config = config or CheckConfig()
+        self.logs: defaultdict[Error | Warn, list[str]] = defaultdict(list)
         # TODO: these should be constants
         self.right_offset = 4.5
         self.left_offset = 2
@@ -70,8 +80,12 @@ class Formatter(object):
         # the margin is proposed, this is cropped and if all pixels are equal to
         # the background, this is skipped
         self.background_color = 255
-        self.pdf_namecheck = PDFNameCheck()
 
+    @cached_property
+    def pdf_namecheck(self) -> PDFNameCheck:
+        # building the rebiber database takes seconds and about 1 GB, and only the
+        # reference check needs it
+        return PDFNameCheck()
 
     def format_check(self, submission, paper_type, output_dir = ".", print_only_errors = False, check_references = False, report_name = None):
         """
@@ -86,14 +100,17 @@ class Formatter(object):
         self.page_errors = set()
         self.pdfpath = submission
 
-        # TODO: A few papers take hours to check. Consider using a timeout
-        self.check_page_size()
-        self.check_page_margin(output_dir)
-        self.check_page_num(paper_type)
-        self.check_font()
+        try:
+            # TODO: A few papers take hours to check. Consider using a timeout
+            self.check_page_size()
+            self.check_page_margin(output_dir)
+            self.check_page_num(paper_type)
+            self.check_font()
 
-        if check_references:
-            self.check_references()
+            if check_references:
+                self.check_references()
+        finally:
+            self.pdf.close()
 
         # TODO: put json dump back on
         output_file = "errors-{0}.json".format(self.number)
@@ -142,7 +159,8 @@ class Formatter(object):
             print("Important: Some of the warnings generated for citations may be spurious and inaccurate, due to parsing and indexing errors.")
             print("We encourage you to double check the citations and update them depending on the latest source. If you believe that your citation is updated and correct, then please ignore those warnings.")
 
-            if errors >= 1:
+            # pages that could not be parsed were not checked, so the paper has not passed
+            if errors >= 1 or Error.PARSING in self.logs:
                 return logs_json
             else:
                 return {}
@@ -227,7 +245,7 @@ class Formatter(object):
                           if np.mean(image_obj.original) != self.background_color:
                             pages_image[i] += [(image, violation)]
                         # if there are some errors during cropping, it is better to check
-                        except:
+                        except Exception:
                           pages_image[i] += [(image, violation)]
 
                 # Parse texts
@@ -281,14 +299,14 @@ class Formatter(object):
                             if np.mean(image_obj.original) != self.background_color:
                                 print("Found text violation:\t" + str(violation) + "\t" + str(word))
                                 pages_text[i] += [(word, violation)]
-                        except:
+                        except Exception:
                           # if there are some errors during cropping, it is better to check
                           pages_image[i] += [(word, violation)]
 
                 # CHECK THE AREA BELOW THE TEXT, it should be empty as it is expected to
                 # be populated with watermark and pages during the construction of the
                 # proceedings
-                if args.disable_bottom_check:
+                if self.config.bottom_check:
                     bpixels = 62
                     bbox = (0, Page.HEIGHT.value - bpixels, Page.WIDTH.value - self.bottom_offset, Page.HEIGHT.value - self.bottom_offset)
                     word = {"top": bbox[1], "bottom": bbox[3]}
@@ -301,12 +319,12 @@ class Formatter(object):
                         if np.mean(image_obj.original) != self.background_color:
                             print("Found text violation:\t" + str(Margin.BOTTOM) + "\t" + str(word))
                             pages_text[i] += [(word, Margin.BOTTOM)]
-                    except:
+                    except Exception:
                       # if there are some errors during cropping, it is better to check
                       pages_image[i] += [(word, Margin.BOTTOM)]
                       traceback.print_exc()
 
-            except:
+            except Exception:
                 traceback.print_exc()
                 perror.append(i+1)
 
@@ -411,7 +429,7 @@ class Formatter(object):
             try:
                 for char in page.chars:
                     fonts[char['fontname']] += 1
-            except:
+            except Exception:
                 self.logs[Error.FONT] += [f"Can't parse page #{i+1}"]
 
         max_font_count, max_font_name = max((count, name) for name, count in fonts.items())  # find most used font
@@ -453,7 +471,7 @@ class Formatter(object):
         for i, page in enumerate(self.pdf.pages):
             try:
                 page_text = page.extract_text()
-            except:
+            except Exception:
                 page_text = ""
                 self.logs[Warn.BIB] += [f"Can't parse page #{i+1}"]
 
@@ -475,7 +493,7 @@ class Formatter(object):
 
         # The following checks fail in ~60% of the papers. TODO: relax them a bit
 
-        if args.disable_name_check:
+        if self.config.name_check:
             config = self.make_name_check_config()
             output_strings = self.pdf_namecheck.execute(config)
             self.logs[Warn.BIB] += output_strings
@@ -496,10 +514,15 @@ class Formatter(object):
             self.logs[Warn.BIB] += ["Couldn't find any references."]
 
 
-args = None
-def worker(pdf_path, paper_type, output_dir=".", report_name=None):
+def worker(
+    pdf_path: str,
+    paper_type: str,
+    output_dir: str = ".",
+    report_name: str | None = None,
+    config: CheckConfig | None = None,
+) -> dict[str, list[str]]:
     """ process one pdf """
-    return Formatter().format_check(submission=pdf_path, paper_type=paper_type, output_dir=output_dir, report_name=report_name)
+    return Formatter(config).format_check(submission=pdf_path, paper_type=paper_type, output_dir=output_dir, report_name=report_name)
 
 
 def job_worker(job, **options):
@@ -534,14 +557,8 @@ def report_names(pdf_paths):
             for pdf, name, clash in zip(pdf_paths, names, shared(names))]
 
 
-def init_worker(worker_args):
-    """ share the parsed arguments with pool processes that do not run main() """
-    global args
-    args = worker_args
 
-
-def main():
-    global args
+def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument('submission_paths', metavar='file_or_dir', nargs='+',
                         default=[])
@@ -558,6 +575,7 @@ def main():
 
 
     args = parser.parse_args()
+    config = CheckConfig(bottom_check=args.disable_bottom_check, name_check=args.disable_name_check)
 
 
     # retrieve file paths
@@ -589,10 +607,10 @@ def main():
 
     # name the reports before any check starts, so that parallel workers agree
     jobs = list(zip(fileset, report_names(fileset)))
-    check = partial(job_worker, paper_type=args.paper_type, output_dir=output_dir)
+    check = partial(job_worker, paper_type=args.paper_type, output_dir=output_dir, config=config)
     if args.num_workers > 1:
         from multiprocessing.pool import Pool
-        with Pool(args.num_workers, initializer=init_worker, initargs=(args,)) as p:
+        with Pool(args.num_workers) as p:
             list(tqdm(p.imap(check, jobs), total=len(jobs)))
     else:
         # TODO: make the tqdm togglable
