@@ -18,6 +18,7 @@ import os
 import numpy as np
 import hashlib
 import tempfile
+import sys
 import traceback
 import unicodedata
 
@@ -558,24 +559,31 @@ def report_names(pdf_paths):
 
 
 
-def main() -> None:
+def main() -> int | None:
+    from .batch import cli as batch
+
     parser = argparse.ArgumentParser()
-    parser.add_argument('submission_paths', metavar='file_or_dir', nargs='+',
+    parser.add_argument('submission_paths', metavar='file_or_dir', nargs='*',
                         default=[])
-    parser.add_argument('-p', '--paper_type', choices={"short", "long", "demo", "other"},
+    # '--paper' was a working abbreviation until the batch options --papers-yml/--papers-dir
+    parser.add_argument('-p', '--paper_type', '--paper', choices={"short", "long", "demo", "other"},
                         default='long', help="")
     parser.add_argument('--num_workers', type=int, default=1)
     parser.add_argument('--disable_name_check', action='store_false')
     parser.add_argument('--disable_bottom_check', action='store_false')
     output = parser.add_mutually_exclusive_group()
     output.add_argument('-o', '--output-dir', metavar='PATH',
-                        help="directory for the JSON and PNG reports, created if missing (default: the current directory)")
+                        help="directory for the JSON and PNG reports, created if missing (default: the current directory; aclpubcheck-batch for batch checks)")
     output.add_argument('--temp-output-dir', action='store_true',
                         help="write the reports to a new temporary directory")
+    batch.add_arguments(parser)
 
 
     args = parser.parse_args()
+    batch.validate_mode(parser, args)
     config = CheckConfig(bottom_check=args.disable_bottom_check, name_check=args.disable_name_check)
+    if batch.is_batch(args):
+        return batch.run(args, config)
 
 
     # retrieve file paths
@@ -622,4 +630,4 @@ def main() -> None:
         print(f"Reports saved to {output_dir}")
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

@@ -1,4 +1,7 @@
 import os
+import shlex
+import shutil
+import tempfile
 import rebiber
 from pylatexenc.latex2text import LatexNodes2Text
 from pybtex.database import parse_file
@@ -23,9 +26,9 @@ class PDFNameCheck:
         # See the link here: https://ref.scholarcy.com/api/
         # I used the POST curl for download
 
-        self.filename = config.file.split('.')[0]
-        temp_name = self.filename.split('/')[-1]
-        os.makedirs('temp', exist_ok=True)
+        # a directory of its own, so concurrent checks never read each other's bib files
+        self.temp_dir = tempfile.mkdtemp(prefix="aclpubcheck-namecheck-")
+        before = os.path.join(self.temp_dir, "before-rebiber.bib")
 
         curl_string = 'curl --silent -X \'POST\'' \
             ' \'https://ref.scholarcy.com/api/references/download\'' \
@@ -38,7 +41,7 @@ class PDFNameCheck:
             f' -F \'reference_style={config.mode}\'' \
             ' -F \'reference_format=bibtex\'' \
             ' -F \'parser=v2\'' \
-            f' -F \'engine=v1\' > temp/before-rebiber-{temp_name}.bib'
+            f' -F \'engine=v1\' > {shlex.quote(before)}'
 
         # Execute that curl string
         with open(os.devnull, "w") as f, contextlib.redirect_stdout(f):
@@ -47,19 +50,17 @@ class PDFNameCheck:
     def apply_rebiber(self):
         # The curl string generates a bib file called 'before rebiber'
         # Pass it to rebiber
-        temp_name = self.filename.split('/')[-1]
-        all_bib_entries = rebiber.load_bib_file(f'temp/before-rebiber-{temp_name}.bib')
+        all_bib_entries = rebiber.load_bib_file(os.path.join(self.temp_dir, "before-rebiber.bib"))
 
         # Update the bib file using rebiber and call it 'after rebiber'
         with open(os.devnull, "w") as f, contextlib.redirect_stdout(f):
             rebiber.normalize_bib(
-                self.bib_db, all_bib_entries, f'temp/after-rebiber-{temp_name}.bib')
+                self.bib_db, all_bib_entries, os.path.join(self.temp_dir, "after-rebiber.bib"))
 
     def extract_names(self):
         # Parse both bib files
-        temp_name = self.filename.split('/')[-1]
-        old_bib_data = parse_file(f'temp/before-rebiber-{temp_name}.bib')
-        new_bib_data = parse_file(f'temp/after-rebiber-{temp_name}.bib')
+        old_bib_data = parse_file(os.path.join(self.temp_dir, "before-rebiber.bib"))
+        new_bib_data = parse_file(os.path.join(self.temp_dir, "after-rebiber.bib"))
 
         name_list = {}
 
@@ -239,7 +240,9 @@ class PDFNameCheck:
 
     def execute(self, config):
         self.execute_curl(config)
-        self.apply_rebiber()
-        name_list = self.extract_names()
-        output_strings = self.compare_changes(name_list, config)
-        return output_strings
+        try:
+            self.apply_rebiber()
+            name_list = self.extract_names()
+            return self.compare_changes(name_list, config)
+        finally:
+            shutil.rmtree(self.temp_dir, ignore_errors=True)
