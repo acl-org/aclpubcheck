@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import os
+import shutil
 import time
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from pathlib import Path
 
 import yaml
@@ -84,6 +85,22 @@ def write_sample(root: str | Path) -> Path:
     return manifest
 
 
+DATA = Path(__file__).parent / "data"
+EXAMPLE_PDF = Path(__file__).parent.parent / "example" / "2023.acl-tutorials.1.pdf"
+# paper id -> expected terminal status for tests/data/papers.yml
+FIXTURE_EXPECTED = {"1": "violations", "2": "violations", "3": "passed"}
+
+
+def write_fixture_papers(root: str | Path) -> Path:
+    """Put the PDFs that tests/data/papers.yml names under root; return that directory."""
+    papers = Path(root) / "papers"
+    papers.mkdir(parents=True)
+    shutil.copyfile(EXAMPLE_PDF, papers / "1.pdf")
+    for name in ("2.pdf", "3.pdf"):
+        write_pages(papers / name, [TEXT] * 6 + [REFERENCES])
+    return papers
+
+
 def crash_on_marker(job: CheckJob) -> CheckOutcome:
     """A run_check that kills its worker process for crash*.pdf.
 
@@ -96,6 +113,37 @@ def crash_on_marker(job: CheckJob) -> CheckOutcome:
         time.sleep(0.3)
         os._exit(1)
     time.sleep(1.0)
+    return run_check(job)
+
+
+# "<directory>:<count>" for wait_for_peers; spawned check processes inherit the environment,
+# so this is how a test reaches into them
+BARRIER_ENV = "ACLPUBCHECK_TEST_BARRIER"
+
+
+def _wait(ready: Callable[[], bool], failure: str, timeout: float = 60) -> None:
+    deadline = time.monotonic() + timeout
+    while not ready():
+        if time.monotonic() > deadline:
+            raise TimeoutError(failure)
+        time.sleep(0.05)
+
+
+def wait_for_peers(job: CheckJob) -> CheckOutcome:
+    """A run_check that starts only once <count> checks are in flight at the same time.
+
+    A run that never has that many checks running together fails here, whatever the speed
+    of the machine, instead of merely being slow.
+    """
+    from aclpubcheck.batch.check import run_check
+
+    directory, count = os.environ[BARRIER_ENV].rsplit(":", 1)
+    barrier = Path(directory)
+    (barrier / f"{os.getpid()}-{job.pdf_path.name}").touch()
+    _wait(
+        lambda: len(list(barrier.iterdir())) >= int(count),
+        f"fewer than {count} checks were ever in flight together",
+    )
     return run_check(job)
 
 

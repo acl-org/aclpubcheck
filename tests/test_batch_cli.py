@@ -24,7 +24,14 @@ from typing import IO
 from unittest.mock import patch
 
 import yaml
-from batch_fixtures import EXPECTED, entry, write_sample
+from batch_fixtures import (
+    DATA,
+    EXPECTED,
+    FIXTURE_EXPECTED,
+    entry,
+    write_fixture_papers,
+    write_sample,
+)
 from pdf_fixtures import REFERENCES, TEXT, write_pages, write_pdf
 
 from aclpubcheck.batch.model import PaperRecord, PaperResult
@@ -142,6 +149,18 @@ class PapersYmlTest(unittest.TestCase):
             if row["status"] == "passed":
                 log = (self.root / row["report_dir"] / "check.log").read_text(encoding="utf8")
                 self.assertIn("All Clear!", log)
+
+
+class CommittedFixtureTest(unittest.TestCase):
+    def test_each_paper_gets_its_expected_status(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            papers = write_fixture_papers(root)
+            manifest = str(DATA / "papers.yml")
+            result = aclpubcheck(root, "--papers-yml", manifest, "--papers-dir", str(papers))
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            rows = read_rows(root / OUTPUT / "summary.csv")
+        self.assertEqual({row["paper_id"]: row["status"] for row in rows}, FIXTURE_EXPECTED)
 
 
 class OptionsTest(unittest.TestCase):
