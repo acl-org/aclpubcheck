@@ -1,4 +1,3 @@
-from argparse import Namespace
 from contextlib import redirect_stdout
 import gc
 import hashlib
@@ -216,17 +215,21 @@ class LibraryTest(unittest.TestCase):
         directory = tempfile.TemporaryDirectory()
         self.addCleanup(directory.cleanup)
         self.addCleanup(os.chdir, os.getcwd())
-        self.addCleanup(setattr, formatchecker, "args", formatchecker.args)
         os.chdir(directory.name)
-        formatchecker.args = Namespace(disable_bottom_check=True, disable_name_check=True)
         write_pdf("1234_margin.pdf", MARGIN_TEXT)
-        for check in (Formatter().format_check, formatchecker.worker):
-            with self.subTest(check=check.__name__):
-                with redirect_stdout(io.StringIO()) as stdout, warnings.catch_warnings():
-                    # format_check leaves the PDF open
-                    warnings.simplefilter("ignore", ResourceWarning)
+        # a fresh Formatter per call: holding one would keep its PDF from being collected
+        checks = (
+            ("format_check", lambda *args: Formatter().format_check(*args)),
+            ("worker", formatchecker.worker),
+        )
+        for name, check in checks:
+            with self.subTest(check=name):
+                with redirect_stdout(io.StringIO()) as stdout, warnings.catch_warnings(record=True) as caught:
+                    warnings.simplefilter("always")
                     check("1234_margin.pdf", "long")
                     gc.collect()
+                # format_check closes the PDF it opened
+                self.assertFalse([w for w in caught if issubclass(w.category, ResourceWarning)])
                 self.assertIn("Errors. Check errors-1234.json for details.", stdout.getvalue())
                 self.assertEqual(
                     names(Path(directory.name)), ["1234_margin.pdf", "errors-1234-page-1.png", "errors-1234.json"]
