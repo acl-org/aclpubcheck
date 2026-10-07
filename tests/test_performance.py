@@ -1,8 +1,12 @@
 """Performance of batch checking, and that it does not change any result.
 
-The tests assert behaviour rather than timings, so they hold on any machine: the
+The default tests assert behaviour rather than timings, so they hold on any machine: the
 name-check database is not built per paper, N workers really run N checks at once, and
 batch reports equal those of checking each PDF on its own.
+
+ACLPUBCHECK_TEST_PAPERS_YML (and ACLPUBCHECK_TEST_PAPERS_DIR if the PDFs are not in papers/
+next to it) adds the same comparison and a timed one on real papers. The SIGDIAL workflow
+sets it; otherwise those tests are skipped.
 """
 
 from __future__ import annotations
@@ -13,6 +17,7 @@ import os
 import subprocess
 import sysconfig
 import tempfile
+import time
 import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -45,7 +50,7 @@ def aclpubcheck(cwd: Path, *args: str) -> None:
         stdin=subprocess.DEVNULL,
         capture_output=True,
         check=True,
-        timeout=120,
+        timeout=600,
     )
 
 
@@ -182,6 +187,40 @@ class ConcurrencyTest(unittest.IsolatedAsyncioTestCase):
             )
         self.assertEqual([r.status for r in results], [Status.PASSED] * len(self.records))
         self.assertEqual(len(list(barrier.iterdir())), len(self.records))  # every check waited
+
+
+@unittest.skipUnless(
+    os.environ.get("ACLPUBCHECK_TEST_PAPERS_YML"),
+    "set ACLPUBCHECK_TEST_PAPERS_YML to use real papers",
+)
+class RealPapersTest(Equivalence, unittest.TestCase):
+    def setUp(self) -> None:
+        self.papers_yml = Path(os.environ["ACLPUBCHECK_TEST_PAPERS_YML"]).resolve()
+        papers_dir = os.environ.get("ACLPUBCHECK_TEST_PAPERS_DIR")
+        self.papers_dir = (
+            Path(papers_dir).resolve() if papers_dir else self.papers_yml.parent / "papers"
+        )
+
+    def test_reports_match_path_mode(self) -> None:
+        self.assert_same_reports(self.papers_yml, self.papers_dir)
+
+    def test_more_workers_are_faster(self) -> None:
+        affinity = getattr(os, "sched_getaffinity", None)  # the CPUs this process may use
+        if (len(affinity(0)) if affinity else os.cpu_count() or 1) < 4:
+            self.skipTest("needs at least 4 CPUs")
+        seconds = {}
+        with tempfile.TemporaryDirectory() as directory:
+            for count in (1, 4):
+                started = time.perf_counter()
+                batch_reports(self.papers_yml, self.papers_dir, Path(directory) / str(count), count)
+                seconds[count] = time.perf_counter() - started
+        print(
+            f"\nbatch check of {self.papers_yml}: "
+            + ", ".join(f"{n} worker(s) {s:.1f} s" for n, s in seconds.items())
+        )
+        # checks are CPU-bound and independent, so 4 workers run them about 2.2x as fast on
+        # the GitHub runner; checking one paper at a time would be about 1x
+        self.assertGreater(seconds[1] / seconds[4], 1.5, seconds)
 
 
 if __name__ == "__main__":

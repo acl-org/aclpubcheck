@@ -1,0 +1,54 @@
+name: SIGDIAL
+
+# Run by hand from the Actions tab. On the 41 papers of the aclpub2 SIGDIAL example, it checks
+# that batch reports match single-file runs, and times a base version and this one on the same
+# runner. The timings go to the run summary; nothing is committed.
+on:
+  workflow_dispatch:
+    inputs:
+      base:
+        description: Version to time against (branch, tag or commit)
+        default: main
+
+permissions:
+  contents: read
+
+jobs:
+  sigdial:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.1.0
+        with:
+          python-version: "3.12"
+          activate-environment: true
+          enable-cache: false
+      - run: uv pip install .
+      # pinned, so the expected reports never change under the tests
+      - name: Fetch the aclpub2 SIGDIAL example
+        run: |
+          git clone --quiet --filter=blob:none --no-checkout https://github.com/rycolab/aclpub2.git "$RUNNER_TEMP/aclpub2"
+          git -C "$RUNNER_TEMP/aclpub2" sparse-checkout set examples/sigdial
+          git -C "$RUNNER_TEMP/aclpub2" checkout --quiet 4fd082b0ec502a764e211fdf868d51d839225891
+      - name: Check that batch reports match single-file runs
+        run: python -m unittest discover -s tests -p test_performance.py -k RealPapers -v
+        env:
+          ACLPUBCHECK_TEST_PAPERS_YML: ${{ runner.temp }}/aclpub2/examples/sigdial/papers.yml
+      - name: Install the base version
+        env:
+          BASE: ${{ inputs.base }}
+        run: |
+          git fetch --quiet --depth 1 origin "$BASE"
+          git worktree add --quiet --detach "$RUNNER_TEMP/base" FETCH_HEAD
+          uv venv --quiet "$RUNNER_TEMP/base-venv"
+          uv pip install --python "$RUNNER_TEMP/base-venv/bin/python" "$RUNNER_TEMP/base"
+      - name: Time the base version and this one
+        shell: bash  # with pipefail, so a failed run fails the step
+        env:
+          BASE: ${{ inputs.base }}
+          PAPERS_YML: ${{ runner.temp }}/aclpub2/examples/sigdial/papers.yml
+        run: |
+          python benchmarks/time_path_mode.py "$PAPERS_YML" --workers 1,4 \
+            "$BASE=$RUNNER_TEMP/base-venv/bin/python" "this version=$(command -v python)" \
+            | tee -a "$GITHUB_STEP_SUMMARY"
