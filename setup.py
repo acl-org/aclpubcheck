@@ -11,7 +11,8 @@ install_requires = [
 	"pylatexenc",
 	"setuptools",
 	"Unidecode",
-	"tsv"
+	"tsv",
+	"pyyaml"
 ]
 
 
