@@ -8,6 +8,8 @@ from unittest.mock import patch
 from pdf_fixtures import MARGIN_TEXT, REFERENCES, TEXT, write_pages
 from pdfplumber.page import Page
 
+from aclpubcheck.batch.check import classify
+from aclpubcheck.batch.model import Status
 from aclpubcheck.formatchecker import CheckConfig, Error, Formatter, Warn
 
 
@@ -48,8 +50,9 @@ class LibraryCallTest(unittest.TestCase):
 
     def test_unparsed_page_is_not_reported_as_clean(self) -> None:
         with patch.object(Page, "extract_words", side_effect=RuntimeError("broken page")):
-            result, _, _ = self.check([TEXT])
+            result, logs, _ = self.check([TEXT])
         self.assertIn("Error.PARSING", result)
+        self.assertEqual(classify(logs).status, Status.CHECK_ERROR)
 
     def test_format_check_does_not_build_the_name_check_database(self) -> None:
         # building it takes seconds and about 1 GB; only the reference check needs it

@@ -90,6 +90,32 @@ If you find that ACL pubcheck gives you a margin error due to a figure that runs
 
 Typically, the space at the bottom of a paper should be left empty, as page numbers will be added during the watermarking process of the proceedings. By default, ACL pubcheck ensures that a margin of approximately 2 cm at the bottom of each page is left blank. If any text is detected in this area, such as page numbers mistakenly added, a warning is generated. However, if this area must contain information, or if you need to bypass this check for any reason, you can disable it by using the parameter `--disable_bottom_check`.
 
+## Batch checking for publication chairs
+
+To check a whole volume, give `aclpubcheck` the [aclpub2](https://github.com/rycolab/aclpub2) `papers.yml` instead of PDF paths. Each paper is checked with the `attributes.paper_type` from its entry, and the summary has one row for **every** expected paper, including the ones that could not be checked:
+
+```bash
+aclpubcheck --papers-yml papers.yml --papers-dir papers/ --num_workers 4 \
+    --output-dir aclpubcheck-report --summary aclpubcheck-report/summary.tsv
+```
+
+| status | meaning |
+| --- | --- |
+| `passed` | no errors or warnings |
+| `warnings` | only warnings, from the bibliography checks that `--check-references` adds; `--check-references online` also checks the author names in citations, which uploads each PDF to ref.scholarcy.com |
+| `violations` | at least one format error (margin, page size, page limit, font) |
+| `check_error` | the checker could not open the PDF, some pages could not be parsed, or the check crashed, so the check is incomplete |
+| `missing_file` | the PDF named in `papers.yml` does not exist or cannot be read |
+| `invalid_input` | the entry cannot be checked (missing or unknown paper type, repeated id, ...) |
+| `cancelled` | the run was interrupted before the paper finished |
+
+Each row has the paper id, title, type, authors and emails, the status, the error categories and messages, and the report directory. `OUTPUT_DIR` is `--output-dir` (or `-o`), a new temporary directory with `--temp-output-dir`, and `aclpubcheck-batch` otherwise. Reports are written to `OUTPUT_DIR/reports/<id>-<sha256 prefix>/`: the JSON and PNG reports, plus `check.log` with the checker's output. A revised PDF therefore never overwrites the reports of an earlier version; checking the same PDF again replaces its reports. `OUTPUT_DIR/input.json` records the papers exactly as they were loaded.
+
+The summary is rewritten as papers change state (at most about once a second). Ctrl-C cancels the run: unfinished papers are marked `cancelled` and the command exits with status 130. If the process is killed outright, the rows it did not finish still show `queued` or `checking`. The exit status is 0 when every paper was processed, whatever the results; 1 when the input lists no papers, or when the run fails unexpectedly (with a traceback); 2 for usage and input errors, including an unreadable `papers.yml` and an unwritable output directory; and 130 when cancelled.
+
+Known limitation: a check has no time or memory limit, so a pathological PDF can occupy a worker for a long time.
+
+
 ## Updating the names in citations
 
 ### Description

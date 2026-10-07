@@ -1,0 +1,31 @@
+# A small aclpub2 papers.yml for the batch tests. tests/batch_fixtures.py puts the PDFs it
+# names in place: 1.pdf is example/2023.acl-tutorials.1.pdf, and 2.pdf and 3.pdf are the same
+# generated paper, six pages of text and then the references, so only their types tell
+# their results apart.
+- id: 1
+  title: The example paper, whose page numbers sit in the bottom margin
+  file: 1.pdf
+  attributes:
+    paper_type: long
+  authors:
+  - first_name: Ada
+    last_name: Lovelace
+    email: ada@example.org
+- id: 2
+  title: A short paper that runs past the page limit
+  file: 2.pdf
+  attributes:
+    paper_type: short
+  authors:
+  - first_name: Alan
+    last_name: Turing
+    email: alan@example.org
+- id: 3
+  title: The same pages as a long paper, within its limit
+  file: 3.pdf
+  attributes:
+    paper_type: long
+  authors:
+  - first_name: Grace
+    last_name: Hopper
+    email: grace@example.org
