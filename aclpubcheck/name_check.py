@@ -126,7 +126,7 @@ class PDFNameCheck:
         # remove spaces and lowercase
         string_a = ('').join(string_a).lower()
         string_b = ('').join(string_b).lower()
-        # remove punctuations
+        # remove punctuation
         string_a = re.sub(r'\W+', '', string_a)
         string_b = re.sub(r'\W+', '', string_b)
         # remove accents
