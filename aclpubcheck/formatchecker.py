@@ -217,7 +217,7 @@ class Formatter(object):
                         # get the actual visible area
                         x0 = max(0, int(image["x0"]))
                         # check the intersection with the right margin to handle larger images
-                        # but with an "overflow" that is of the same color of the backgrond
+                        # but with an "overflow" that is of the same color of the background
                         if violation == Margin.RIGHT:
                             x0 = max(x0, Page.WIDTH.value - 71 + self.right_offset)
 
@@ -271,7 +271,7 @@ class Formatter(object):
                         # get the actual visible area
                         x0 = max(0, int(word["x0"]))
                         # check the intersection with the right margin to handle larger images
-                        # but with an "overflow" that is of the same color of the backgrond
+                        # but with an "overflow" that is of the same color of the background
                         if violation == Margin.RIGHT:
                             x0 = max(x0, Page.WIDTH.value - 71 + self.right_offset)
 
